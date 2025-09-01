@@ -1,4 +1,5 @@
 import express from "express";
+import db from "./db.js";
 import errorHandler from "./middleware/errorHandler.js";
 import logger from "./middleware/logger.js";
 import notFound from "./middleware/notFound.js";
