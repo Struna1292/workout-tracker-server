@@ -13,11 +13,4 @@ const db = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
     logging: false,
 });
 
-try {
-    await db.authenticate();
-    console.log('Connection to database has been established successfully.');
-} catch (error) {
-    console.error('Unable to connect to the database:', error);
-}
-
 export default db;
