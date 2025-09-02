@@ -1,4 +1,5 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import db from "./db.js";
 import errorHandler from "./middleware/errorHandler.js";
 import logger from "./middleware/logger.js";
@@ -11,6 +12,9 @@ const app = express();
 
 // json middleware
 app.use(express.json());
+
+// cookies middleware
+app.use(cookieParser());
 
 // logger middleware
 app.use(logger);
