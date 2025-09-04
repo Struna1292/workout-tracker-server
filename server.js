@@ -5,6 +5,7 @@ import errorHandler from "./middleware/errorHandler.js";
 import logger from "./middleware/logger.js";
 import notFound from "./middleware/notFound.js";
 import authRouter from "./routes/authRoutes.js";
+import "./sync.js"; 
 
 const PORT = process.env.PORT;
 
