@@ -28,11 +28,5 @@ app.use(notFound);
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
-    try {
-        await db.authenticate();
-        console.log('Connection to database has been established successfully.');
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
-    }
     console.log(`Server listening on port ${PORT}`);
 });
