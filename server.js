@@ -1,10 +1,11 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import db from "./db.js";
-import errorHandler from "./middleware/errorHandler.js";
-import logger from "./middleware/logger.js";
-import notFound from "./middleware/notFound.js";
+import errorHandler from "./middlewares/errorHandler.js";
+import logger from "./middlewares/logger.js";
+import notFound from "./middlewares/notFound.js";
 import authRouter from "./routes/authRoutes.js";
+import bodyMeasurementsRoutes from "./routes/bodyMeasurementsRoutes.js";
 import "./sync.js"; 
 
 const PORT = process.env.PORT;
@@ -20,7 +21,9 @@ app.use(cookieParser());
 // logger middleware
 app.use(logger);
 
+// routes
 app.use("/api/auth", authRouter);
+app.use("/api/bodyMeasurements", bodyMeasurementsRoutes);
 
 // not found middleware
 app.use(notFound);
