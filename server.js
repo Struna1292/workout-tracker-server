@@ -6,6 +6,7 @@ import logger from "./middlewares/logger.js";
 import notFound from "./middlewares/notFound.js";
 import authRouter from "./routes/authRoutes.js";
 import bodyMeasurementsRoutes from "./routes/bodyMeasurementsRoutes.js";
+import workoutTemplatesRoutes from "./routes/workoutTemplatesRoutes.js";
 import "./sync.js"; 
 
 const PORT = process.env.PORT;
@@ -24,6 +25,7 @@ app.use(logger);
 // routes
 app.use("/api/auth", authRouter);
 app.use("/api/bodyMeasurements", bodyMeasurementsRoutes);
+app.use("/api/workoutTemplates", workoutTemplatesRoutes);
 
 // not found middleware
 app.use(notFound);
