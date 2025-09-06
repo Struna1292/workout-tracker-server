@@ -11,7 +11,7 @@ router.get("", authToken, userWorkoutTemplates);
 router.post("", authToken, addWorkoutTemplate);
 
 // edit template
-router.put("", authToken, updateWorkoutTemplate);
+router.put("/:id", authToken, updateWorkoutTemplate);
 
 // remove user template
 router.delete("/:id", authToken, removeWorkoutTemplate);

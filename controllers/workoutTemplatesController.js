@@ -1,8 +1,28 @@
 import User from "../models/User.js";
 import WorkoutTemplate from "../models/WorkoutTemplate.js";
+import { Op } from "sequelize";
 
 export const userWorkoutTemplates = async (req, res, next) => {
+    try {
+        const user = await User.findByPk(req.user.id);
 
+        if (!user) {
+            console.log("Failed to load user templates, user does not exist");
+            const err = new Error("Failed to load user templates, user does not exist");
+            err.status = 404;
+            return next(err);
+        }
+
+        const templates = await user.getWorkoutTemplates();
+
+        return res.status(200).json(templates);
+    }
+    catch (error) {
+        console.log(`Error while trying to get user templates: ${error}`);
+        const err = new Error("Internal server error while trying to get user templates");
+        err.status = 500;
+        return next(err);
+    }
 };
 
 const validateTemplate = (name, templates, errors) => {
@@ -81,7 +101,59 @@ export const addWorkoutTemplate = async (req, res, next) => {
 };
 
 export const updateWorkoutTemplate = async (req, res, next) => {
+    try {
 
+        if (!req.body) {
+            console.log("Failed to edit template, no data");
+            const err = new Error("Failed to edit template, no data");
+            err.status = 400;
+            return next(err);
+        }
+
+        const { name } = req.body;
+        
+        if (!name) {
+            console.log("Failed to edit template, no data");
+            const err = new Error("Failed to edit template, no data");
+            err.status = 400;
+            return next(err);
+        }
+
+        const templateId = req.params.id;
+
+        const template = await WorkoutTemplate.findByPk(templateId);
+
+        if (!template || template.user_id != req.user.id) {
+            console.log("Failed to edit template, template not found");
+            const err = new Error("Failed to edit template, template not found");
+            err.status = 404;
+            return next(err);
+        }
+
+        const templates = await WorkoutTemplate.findAll({ where: { id: { [Op.not]: templateId }, user_id: req.user.id}});
+
+        const errors = [];
+        
+        if (validateTemplate(name, templates, errors)) {
+
+            template.name = name;
+            await template.save();
+
+            return res.status(200).json({ message: "Successfully edited workout template" });
+        }
+        else {
+            console.log(`Failed to edit template, ${errors[0]}`);
+            const err = new Error(`Failed to edit template, ${errors[0]}`);
+            err.status = 400;
+            return next(err);            
+        }
+    }
+    catch (error) {
+        console.log(`Error while trying to udpate template: ${error}`);
+        const err = new Error("Internal server error while trying to update template");
+        err.status = 500;
+        return next(err);
+    }
 };
 
 export const removeWorkoutTemplate = async (req, res, next) => {
