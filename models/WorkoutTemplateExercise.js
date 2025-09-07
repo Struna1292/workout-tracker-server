@@ -18,6 +18,22 @@ const WorkoutTemplateExercise = db.define(
     }, {
         tableName: 'workout_templates_exercises',
         timestamps: false,
+        // default indexes names are too long
+        indexes: [
+            {
+                name: 'wte_template_idx',
+                fields: ['workout_template_id']
+            }, 
+            {
+                name: 'wte_exercise_idx',
+                fields: ['exercise_id']
+            },
+            {
+                name: 'wte_template_position_unique',
+                unique: true,
+                fields: ['workout_template_id', 'position']
+            }
+        ]
     } 
 );
 
