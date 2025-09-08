@@ -1,6 +1,7 @@
 import express from 'express';
 import authToken from '../middlewares/authToken.js';
 import loadUser from '../middlewares/loadUser.js';
+import checkBody from '../middlewares/checkBody.js';
 import { addWorkoutTemplate, removeWorkoutTemplate, userWorkoutTemplates, updateWorkoutTemplate } from '../controllers/workoutTemplatesController.js';
 
 const router = express.Router();
@@ -9,10 +10,10 @@ const router = express.Router();
 router.get('', [authToken, loadUser], userWorkoutTemplates);
 
 // add new user template
-router.post('', [authToken, loadUser], addWorkoutTemplate); 
+router.post('', [checkBody, authToken, loadUser], addWorkoutTemplate); 
 
 // edit template
-router.put('/:id', authToken, updateWorkoutTemplate);
+router.put('/:id', [checkBody, authToken, loadUser], updateWorkoutTemplate);
 
 // remove user template
 router.delete('/:id', authToken, removeWorkoutTemplate);
