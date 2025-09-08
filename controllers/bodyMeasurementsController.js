@@ -2,21 +2,15 @@ import User from '../models/User.js';
 
 export const userMeasurements = async (req, res, next) => {
     try {
-        const user = await User.findByPk(req.user.id);
 
-        if (!user) {
-            console.log('Failed to load user measurements. User does not exist');
-            const err = new Error('Failed to load user measurements. User does not exist');
-            err.status = 404;
-            return next(err);
-        }
+        const user = req.user;
         
         const measurements = await user.getBodyMeasurements();
 
         if (measurements.length == 0) {
             const err = new Error('User has no measurements');
             err.status = 404;
-            return next(err);
+            return next(err); 
         }
 
         return res.status(200).json(measurements);
@@ -88,14 +82,7 @@ export const addMeasurement = async (req, res, next) => {
             return next(err);
         }
 
-        const user = await User.findByPk(req.user.id);
-
-        if (!user) {
-            console.log('Failed to create new measurement. User does not exist');
-            const err = new Error('Failed to create new measurement. User does not exist');
-            err.status = 404;
-            return next(err);
-        }
+        const user = req.user;
 
         await user.createBodyMeasurement(data);
 
@@ -113,14 +100,7 @@ export const updateMeasurement = async (req, res, next) => {
     try {
         const measurementId = req.params.id;
 
-        const user = await User.findByPk(req.user.id);
-
-        if (!user) {
-            console.log('Failed to update user measurement. User does not exist');
-            const err = new Error('Failed to update user measurement. User does not exist');
-            err.status = 404;
-            return next(err);
-        }
+        const user = req.user;
 
         const measurement = (await user.getBodyMeasurements({
             where: { id: measurementId },
@@ -165,14 +145,7 @@ export const removeMeasurement = async (req, res, next) => {
     try {
         const measurementId = req.params.id;
 
-        const user = await User.findByPk(req.user.id);
-
-        if (!user) {
-            console.log('Failed to remove measurement. User does not exist');
-            const err = new Error('Failed to remove measurement. User does not exist');
-            err.status = 404;
-            return next(err);
-        }
+        const user = req.user;
         
         const measurement = (await user.getBodyMeasurements({
             where: { id: measurementId },

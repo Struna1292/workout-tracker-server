@@ -4,14 +4,7 @@ import { Op } from 'sequelize';
 
 export const userWorkoutTemplates = async (req, res, next) => {
     try {
-        const user = await User.findByPk(req.user.id);
-
-        if (!user) {
-            console.log('Failed to load user templates, user does not exist');
-            const err = new Error('Failed to load user templates, user does not exist');
-            err.status = 404;
-            return next(err);
-        }
+        const user = req.user;
 
         const templates = await user.getWorkoutTemplates();
 
@@ -73,7 +66,7 @@ export const addWorkoutTemplate = async (req, res, next) => {
             return next(err);
         }
 
-        const user = await User.findByPk(req.user.id);
+        const user = req.user;
 
         const templates = await user.getWorkoutTemplates();
 
