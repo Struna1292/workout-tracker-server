@@ -15,7 +15,8 @@ const Exercise = db.define(
         },
         description: {
             type: DataTypes.TEXT,
-            allowNull: true,
+            allowNull: false,
+            defaultValue: '',
         },
         user_id: {
             type: DataTypes.INTEGER,
