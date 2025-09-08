@@ -4,6 +4,8 @@ import './models/BodyMeasurement.js';
 import './models/WorkoutTemplate.js';
 import './models/Exercise.js';
 import './models/WorkoutTemplateExercise.js';
+import './models/MuscleGroup.js';
+import './models/ExerciseMuscleGroup.js';
 
 import './models/associations.js';
 
