@@ -1,4 +1,4 @@
-import { Sequelize } from "sequelize";
+import { Sequelize } from 'sequelize';
 
 const DB_HOST = process.env.DB_HOST;
 const DB_USER = process.env.DB_USER;

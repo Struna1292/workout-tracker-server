@@ -1,5 +1,5 @@
-import db from "../db.js";
-import { DataTypes } from "sequelize";
+import db from '../db.js';
+import { DataTypes } from 'sequelize';
 
 const WorkoutTemplate = db.define(
     'WorkoutTemplate', {

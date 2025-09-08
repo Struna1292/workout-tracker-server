@@ -1,23 +1,23 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 const authToken = (req, res, next) => {
 
-    const header = req.headers["authorization"];
+    const header = req.headers['authorization'];
 
     if (!header) {
-        console.log("No authorization header");
-        const err = new Error("No authorization header");
+        console.log('No authorization header');
+        const err = new Error('No authorization header');
         err.status = 401;
         return next(err);
     }
 
-    const token = header.split("Bearer ")[1];
+    const token = header.split('Bearer ')[1];
 
     if (!token) {
-        console.log("Invalid authorization header format");
-        const err = new Error("Invalid authorization header format");
+        console.log('Invalid authorization header format');
+        const err = new Error('Invalid authorization header format');
         err.status = 401;
         return next(err);        
     }
@@ -30,12 +30,12 @@ const authToken = (req, res, next) => {
     catch (error) {
         console.log(`Error while trying to verify token: ${error}`);
         if (error.name == 'TokenExpiredError') {
-            const err = new Error("Token expired");
+            const err = new Error('Token expired');
             err.status = 401;
             return next(err);
         }
         else {
-            const err = new Error("Invalid token");
+            const err = new Error('Invalid token');
             err.status = 403;
             return next(err);
         }

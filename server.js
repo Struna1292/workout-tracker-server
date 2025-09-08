@@ -1,14 +1,14 @@
-import express from "express";
-import cookieParser from "cookie-parser";
-import db from "./db.js";
-import errorHandler from "./middlewares/errorHandler.js";
-import logger from "./middlewares/logger.js";
-import notFound from "./middlewares/notFound.js";
-import authRouter from "./routes/authRoutes.js";
-import bodyMeasurementsRoutes from "./routes/bodyMeasurementsRoutes.js";
-import workoutTemplatesRoutes from "./routes/workoutTemplatesRoutes.js";
-import exercisesRoutes from "./routes/exercisesRoutes.js";
-import "./sync.js"; 
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import './db.js';
+import errorHandler from './middlewares/errorHandler.js';
+import logger from './middlewares/logger.js';
+import notFound from './middlewares/notFound.js';
+import authRouter from './routes/authRoutes.js';
+import bodyMeasurementsRoutes from './routes/bodyMeasurementsRoutes.js';
+import workoutTemplatesRoutes from './routes/workoutTemplatesRoutes.js';
+import exercisesRoutes from './routes/exercisesRoutes.js';
+import './sync.js'; 
 
 const PORT = process.env.PORT;
 
@@ -24,10 +24,10 @@ app.use(cookieParser());
 app.use(logger);
 
 // routes
-app.use("/api/auth", authRouter);
-app.use("/api/bodyMeasurements", bodyMeasurementsRoutes);
-app.use("/api/workoutTemplates", workoutTemplatesRoutes);
-app.use("/api/exercises", exercisesRoutes);
+app.use('/api/auth', authRouter);
+app.use('/api/bodyMeasurements', bodyMeasurementsRoutes);
+app.use('/api/workoutTemplates', workoutTemplatesRoutes);
+app.use('/api/exercises', exercisesRoutes);
 
 // not found middleware
 app.use(notFound);

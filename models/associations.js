@@ -1,8 +1,8 @@
-import User from "./User.js";
-import BodyMeasurement from "./BodyMeasurement.js";
-import WorkoutTemplate from "./WorkoutTemplate.js";
-import Exercise from "./Exercise.js";
-import WorkoutTemplateExercise from "./WorkoutTemplateExercise.js";
+import User from './User.js';
+import BodyMeasurement from './BodyMeasurement.js';
+import WorkoutTemplate from './WorkoutTemplate.js';
+import Exercise from './Exercise.js';
+import WorkoutTemplateExercise from './WorkoutTemplateExercise.js';
 
 // relations between user and his body measurements
 User.hasMany(BodyMeasurement, { foreignKey: 'user_id', as: 'BodyMeasurements', onDelete: 'CASCADE'});

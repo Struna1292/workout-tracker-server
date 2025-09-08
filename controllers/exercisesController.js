@@ -9,7 +9,7 @@ export const getUserExercises = async (req, res, next) => {
     }
     catch (error) {
         console.log(`Error while trying to get user exercises: ${error}`);
-        const err = new Error("Internal server error while trying to get user exercises");
+        const err = new Error('Internal server error while trying to get user exercises');
         err.status = 500;
         return next(err);
     }
@@ -24,11 +24,11 @@ export const addUserExercise = async (req, res, next) => {
 
         await user.createExercise({ name: data.name });
         
-        return res.status(200).json({ message: "Successfully added exercise" });
+        return res.status(200).json({ message: 'Successfully added exercise' });
     }
     catch (error) {
         console.log(error);
-        const err = new Error("");
+        const err = new Error('');
         err.status = 500;
         return next(err);
     }
