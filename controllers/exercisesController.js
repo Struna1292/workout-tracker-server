@@ -1,4 +1,5 @@
 import Exercise from '../models/Exercise.js';
+import MuscleGroups from '../models/MuscleGroup.js';
 import { Op } from 'sequelize';
 
 export const getUserExercises = async (req, res, next) => {
@@ -8,7 +9,19 @@ export const getUserExercises = async (req, res, next) => {
 
         const exercises = await user.getExercises();
 
-        return res.status(200).json(exercises);
+        const exercisesData = [];
+        for (const exercise of exercises) {
+            const muscleGroups = await exercise.getMuscleGroups();
+
+            exercisesData.push({
+                id: exercise.id,
+                name: exercise.name,
+                description: exercise.description,
+                muscleGroups: muscleGroups.map((mG) => (mG.name))
+            });
+        }
+
+        return res.status(200).json(exercisesData);
     }
     catch (error) {
         console.log(`Error while trying to get user exercises: ${error}`);
@@ -23,7 +36,19 @@ export const getGlobalExercises = async (req, res, next) => {
 
         const exercises = await Exercise.findAll({ where: { user_id: null } });
 
-        return res.status(200).json(exercises);
+        const exercisesData = [];
+        for (const exercise of exercises) {
+            const muscleGroups = await exercise.getMuscleGroups();
+
+            exercisesData.push({
+                id: exercise.id,
+                name: exercise.name,
+                description: exercise.description,
+                muscleGroups: muscleGroups.map((mG) => (mG.name))
+            });
+        }        
+
+        return res.status(200).json(exercisesData);
     }
     catch (error) {
         console.log(`Error while trying to get load global exercises from db: ${error}`);
@@ -77,6 +102,34 @@ const validateDescription = (description, errors) => {
     return true;
 };
 
+const mapMuscleGroups = async (names) => {
+
+    const muscleGroups = await MuscleGroups.findAll();
+
+    // key is lowercase string name, value is muscle group model
+    const map = new Map();
+
+    for (const name of names) {
+        map.set(name.toLowerCase(), undefined);
+    }
+
+    for (const currGroup of muscleGroups) {
+        const currName = currGroup.name.toLowerCase();
+        if (map.has(currName)) {
+            map.set(currName, currGroup);
+        }
+    }
+
+    const groups = [];
+    for (const [key, value] of map) {
+        if (value != undefined) {
+            groups.push(value);
+        }
+    }
+
+    return groups;
+};
+
 export const addUserExercise = async (req, res, next) => {
     try {
 
@@ -104,7 +157,14 @@ export const addUserExercise = async (req, res, next) => {
             return next(err);              
         }
 
-        await user.createExercise({ name: data.name, description: data.description });
+        const exercise = await user.createExercise({ name: data.name, description: data.description });
+
+        if (data.muscleGroups) {
+
+            const groups = await mapMuscleGroups(data.muscleGroups);
+
+            await exercise.setMuscleGroups(groups);
+        }
         
         return res.status(200).json({ message: 'Successfully added exercise' });
     }
@@ -121,9 +181,9 @@ export const editUserExercise = async (req, res, next) => {
         const data = req.body;
 
         // check if user sent any proper data to change
-        if (!data.name && !data.description) {
+        if (!data.name && !data.description && !data.muscleGroups) {
             console.log('User did not sent any data for change');
-            const err = new Error('There is no data to change, proper fields: name, description');
+            const err = new Error('There is no data to change, proper fields: name, description, muscleGroups');
             err.status = 400;
             return next(err);
         }
@@ -159,6 +219,16 @@ export const editUserExercise = async (req, res, next) => {
             const err = new Error(`Failed to edit exercise, ${errors[0]}`);
             err.status = 400;
             return next(err);              
+        }
+
+        if (data.muscleGroups) {
+            const groups = await mapMuscleGroups(data.muscleGroups);
+
+            // clear current muscle groups
+            await exercise.setMuscleGroups([]);
+
+            // set new muscle groups
+            await exercise.setMuscleGroups(groups);
         }
 
         await exercise.save();
