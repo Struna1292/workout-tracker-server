@@ -5,6 +5,9 @@ import Exercise from './Exercise.js';
 import WorkoutTemplateExercise from './WorkoutTemplateExercise.js';
 import MuscleGroup from './MuscleGroup.js';
 import ExerciseMuscleGroup from './ExerciseMuscleGroup.js';
+import Workout from './Workout.js';
+import WorkoutExercise from './WorkoutExercise.js';
+import Set from './Set.js';
 
 // relations between user and his body measurements
 User.hasMany(BodyMeasurement, { foreignKey: 'user_id', as: 'BodyMeasurements', onDelete: 'CASCADE'});
@@ -25,3 +28,15 @@ WorkoutTemplate.belongsToMany(Exercise, { through: {model: WorkoutTemplateExerci
 // relations between exercise and muscle groups it works
 Exercise.belongsToMany(MuscleGroup, { through: ExerciseMuscleGroup, foreignKey: 'exercise_id', otherKey: 'muscle_group_id'});
 MuscleGroup.belongsToMany(Exercise, { through: ExerciseMuscleGroup, foreignKey: 'muscle_group_id', otherKey: 'exercise_id'});
+
+// relations between user and his workouts
+User.hasMany(Workout, { foreignKey: 'user_id', as: 'Workouts', onDelete: 'CASCADE' });
+Workout.belongsTo(User, { foreignKey: 'user_id', as: 'User', onDelete: 'NO ACTION' });
+
+// relations between workouts and exercises in it
+Workout.belongsToMany(Exercise, { through: {model: WorkoutExercise, unique: false}, foreignKey: 'workout_id', otherKey: 'exercise_id' });
+Exercise.belongsToMany(Workout, { through: {model: WorkoutExercise, unique: false}, foreignKey: 'exercise_id', otherKey: 'workout_id' });
+
+// relations between workout exercise and it sets
+WorkoutExercise.hasMany(Set, { foreignKey: 'workout_exercise_id', as: 'Sets', onDelete: 'CASCADE' });
+Set.belongsTo(WorkoutExercise, { foreignKey: 'workout_exercise_id', as: 'Exercise', onDelete: 'NO ACTION' });
