@@ -40,3 +40,7 @@ Exercise.belongsToMany(Workout, { through: {model: WorkoutExercise, unique: fals
 // relations between workout exercise and it sets
 WorkoutExercise.hasMany(Set, { foreignKey: 'workout_exercise_id', as: 'Sets', onDelete: 'CASCADE' });
 Set.belongsTo(WorkoutExercise, { foreignKey: 'workout_exercise_id', as: 'Exercise', onDelete: 'NO ACTION' });
+
+// relations between workout and template its been based on
+WorkoutTemplate.hasMany(Workout, { foreignKey: 'workout_template_id', as: 'Workouts', onDelete: 'NO ACTION' });
+Workout.belongsTo(WorkoutTemplate, { foreignKey: 'workout_template_id', as: 'Template', onDelete: 'NO ACTION' });

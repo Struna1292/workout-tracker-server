@@ -13,6 +13,10 @@ const Workout = db.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        workout_template_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
         duration: {
             type:DataTypes.INTEGER,
             allowNull: true,
