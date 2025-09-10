@@ -9,6 +9,7 @@ import bodyMeasurementsRoutes from './routes/bodyMeasurementsRoutes.js';
 import workoutTemplatesRoutes from './routes/workoutTemplatesRoutes.js';
 import exercisesRoutes from './routes/exercisesRoutes.js';
 import muscleGroupsRoutes from './routes/muscleGroupsRoutes.js';
+import workoutRoutes from './routes/workoutsRoutes.js';
 import './sync.js'; 
 
 const PORT = process.env.PORT;
@@ -30,6 +31,7 @@ app.use('/api/bodyMeasurements', bodyMeasurementsRoutes);
 app.use('/api/workoutTemplates', workoutTemplatesRoutes);
 app.use('/api/exercises', exercisesRoutes);
 app.use('/api/muscleGroups', muscleGroupsRoutes);
+app.use('/api/workouts', workoutRoutes);
 
 // not found middleware
 app.use(notFound);
