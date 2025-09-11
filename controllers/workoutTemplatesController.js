@@ -1,5 +1,6 @@
 import WorkoutTemplate from '../models/WorkoutTemplate.js';
 import Exercise from '../models/Exercise.js';
+import WorkoutTemplateExercise from '../models/WorkoutTemplateExercise.js';
 import { Op } from 'sequelize';
 
 export const userWorkoutTemplates = async (req, res, next) => {
@@ -97,7 +98,7 @@ const mapExercises = async (user, names) => {
     for (const exercise of globalExercises) {
         const currName = exercise.name.toLowerCase();
         if (map.has(currName)) {
-            map.set(currName, exercise.dataValues.id);
+            map.set(currName, exercise.id);
         }
     }
 
@@ -105,16 +106,17 @@ const mapExercises = async (user, names) => {
     for (const exercise of userExercises) {
         const currName = exercise.name.toLowerCase();
         if (map.has(currName)) {
-            map.set(currName, exercise.dataValues.id);
+            map.set(currName, exercise.id);
         }      
     }
 
     const ids = [];
 
     // push found exercises ids
-    for (let [key, value] of map) {
-        if (value != undefined) {
-            ids.push(value);
+    for (const name of names) {
+        const currName = name.toLowerCase();
+        if (map.has(currName)) {
+            ids.push(map.get(currName));
         }
     }
 
@@ -146,11 +148,17 @@ export const addWorkoutTemplate = async (req, res, next) => {
 
             const template = await user.createWorkoutTemplate({ name: name });
 
-            let currPosition = 0;
-            for (const currId of exercisesIds) {
-                await template.addExercise(currId, { through: { position: currPosition } });
-                currPosition++;
+            const workoutTemplateExercises = [];
+            for (let i = 0; i < exercisesIds.length; i++) {
+                workoutTemplateExercises.push({
+                    workout_template_id: template.id, 
+                    exercise_id: exercisesIds[i], 
+                    position: i
+                });
             }
+
+            await WorkoutTemplateExercise.bulkCreate(workoutTemplateExercises);
+            
             
             return res.status(200).json({ message: 'Successfully added new workout template' });
         }
@@ -208,11 +216,16 @@ export const updateWorkoutTemplate = async (req, res, next) => {
                 await template.setExercises([]);
 
                 // setup new exercises
-                let currPosition = 0;
-                for (const currId of exercisesIds) {
-                    await template.addExercise(currId, { through: { position: currPosition } });
-                    currPosition++;
-                }                
+                const workoutTemplateExercises = [];
+                for (let i = 0; i < exercisesIds.length; i++) {
+                    workoutTemplateExercises.push({
+                        workout_template_id: template.id, 
+                        exercise_id: exercisesIds[i], 
+                        position: i
+                    });
+                }
+
+                await WorkoutTemplateExercise.bulkCreate(workoutTemplateExercises);                          
             }
 
             await template.save();
