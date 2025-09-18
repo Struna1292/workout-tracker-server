@@ -11,10 +11,14 @@ import exercisesRoutes from './routes/exercisesRoutes.js';
 import muscleGroupsRoutes from './routes/muscleGroupsRoutes.js';
 import workoutRoutes from './routes/workoutsRoutes.js';
 import './sync.js'; 
+import cors from 'cors';
 
 const PORT = process.env.PORT;
 
 const app = express();
+
+// cors middleware
+app.use(cors());
 
 // json middleware
 app.use(express.json());
