@@ -25,6 +25,6 @@ router.post('', [checkBody, authToken, loadUser], addWorkoutTemplate);
 router.put('/:id', [checkBody, authToken, loadUser], updateWorkoutTemplate);
 
 // remove user template
-router.delete('/:id', authToken, removeWorkoutTemplate);
+router.delete('/:id', [authToken, loadUser], removeWorkoutTemplate);
 
 export default router;
