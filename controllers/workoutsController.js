@@ -52,7 +52,7 @@ export const getUserWorkouts = async (req, res, next) => {
     }
 };
 
-// maps global and user exercises where key is name, value is exercise object
+// maps global and user exercises where key is id, value is exercise object
 const mapExercises = async (user) => {
 
     const globalExercises = await Exercise.findAll({ where: { user_id: null } });
@@ -61,13 +61,11 @@ const mapExercises = async (user) => {
     const map = new Map();
 
     for (const exercise of globalExercises) {
-        const currName = exercise.name.toLowerCase();
-        map.set(currName, exercise);
+        map.set(exercise.id, exercise);
     }
 
     for (const exercise of userExercises) {
-        const currName = exercise.name.toLowerCase();
-        map.set(currName, exercise);
+        map.set(exercise.id, exercise);
     }    
 
     return map;
@@ -86,16 +84,12 @@ export const addWorkout = async (req, res, next) => {
         
         const workoutData = {};
 
-        if (req.body.templateName) {
-            const name = req.body.templateName.toLowerCase();
+        if (req.body.template) {
 
-            const templates = await user.getWorkoutTemplates();
+            const template = (await user.getWorkoutTemplates({ where: { id: req.body.template } }))[0];
 
-            for (const template of templates) {
-                if (template.name.toLowerCase() == name) {
-                    workoutData.workout_template_id = template.id;
-                    break;
-                }
+            if (template) {
+                workoutData.workout_template_id = template.id;
             }
         }
         
@@ -121,17 +115,17 @@ export const addWorkout = async (req, res, next) => {
             let exercisePosition = 0;
             for (const exercise of exercises) {
 
-                if (!exercise.name) {
+                if (!exercise.id) {
                     continue;
                 }
-                const name = exercise.name.toLowerCase();
+                const currId = exercise.id;
 
                 // check if exercise exists
-                if (!map.has(name)) {
+                if (!map.has(currId)) {
                     continue;
                 }
                 
-                const currExercise = map.get(name);
+                const currExercise = map.get(currId);
 
                 const currWorkoutExercise = await WorkoutExercise.create({
                     workout_id: workout.id, 
@@ -163,7 +157,7 @@ export const addWorkout = async (req, res, next) => {
             }
         }
 
-        return res.status(200).json({ message: 'Successfully added workout' });
+        return res.status(200).json({ id: workout.id, message: 'Successfully added workout' });
     }
     catch (error) {
         console.log(`Error while trying to add new workout: ${error}`);
@@ -190,18 +184,14 @@ export const editWorkout = async (req, res, next) => {
 
         const data = req.body;
 
-        if (data.templateName) {
-            const name = data.templateName.toLowerCase();
+        if (data.template) {
 
-            const templates = await user.getWorkoutTemplates();
+            const template = (await user.getWorkoutTemplates({ where: { id: req.body.template } }))[0];
 
-            for (const template of templates) {
-                if (template.name.toLowerCase() == name) {
-                    workout.workout_template_id = template.id;
-                    break;
-                }
+            if (template) {
+                workout.workout_template_id = template.id;
             }
-        }
+        }        
 
         const duration = data.duration;
         if (duration && duration >= 0 && duration <= 1000000) {
@@ -226,17 +216,17 @@ export const editWorkout = async (req, res, next) => {
             let exercisePosition = 0;
             for (const exercise of exercises) {
 
-                if (!exercise.name) {
+                if (!exercise.id) {
                     continue;
                 }
-                const name = exercise.name.toLowerCase();
+                const currId = exercise.id;
 
                 // check if exercise exists
-                if (!map.has(name)) {
+                if (!map.has(currId)) {
                     continue;
                 }
                 
-                const currExercise = map.get(name);
+                const currExercise = map.get(currId);
 
                 const currWorkoutExercise = await WorkoutExercise.create({
                     workout_id: workout.id, 

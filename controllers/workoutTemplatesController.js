@@ -8,6 +8,22 @@ export const userWorkoutTemplates = async (req, res, next) => {
         const user = req.user;
 
         const templates = await user.getWorkoutTemplates();
+        const templatesData = [];
+
+        for (const template of templates) {
+            const exercises = await template.getExercises();
+            const exercisesData = new Array(exercises.length);
+
+            for (const exercise of exercises) {
+                exercisesData[exercise.WorkoutTemplateExercise.position] = exercise.name;
+            }
+
+            templatesData.push({
+                id: template.id,
+                name: template.name,
+                exercises: exercisesData,
+            });
+        }
 
         return res.status(200).json(templates);
     }
@@ -82,46 +98,32 @@ const validateTemplate = (name, templates, errors) => {
 };
 
 // maps given exercises names to exercises ids
-const mapExercises = async (user, names) => {
+const mapExercises = async (user, ids) => {
 
     const globalExercises = await Exercise.findAll({ where: { user_id: null } });
     const userExercises = await user.getExercises();
 
     const map = new Map();
 
-    // setup map with keys of given exercises names
-    for (const name of names) {
-        map.set(name.toLowerCase(), undefined);
-    }
-
-    // assign global exercises ids
+    // assign global exercises
     for (const exercise of globalExercises) {
-        const currName = exercise.name.toLowerCase();
-        if (map.has(currName)) {
-            map.set(currName, exercise.id);
-        }
+        map.set(exercise.id, exercise);
     }
 
-    // assign user exercises ids
+    // assign user exercises 
     for (const exercise of userExercises) {
-        const currName = exercise.name.toLowerCase();
-        if (map.has(currName)) {
-            map.set(currName, exercise.id);
-        }      
+        map.set(exercise.id, exercise);      
     }
 
-    const ids = [];
+    const exercises = [];
 
-    // push found exercises ids
-    for (const name of names) {
-        const currName = name.toLowerCase();
-        if (map.has(currName)) {
-            ids.push(map.get(currName));
+    for (const id of ids) {
+        if (map.has(id)) {
+            exercises.push(map.get(id));
         }
     }
-
     
-    return ids;
+    return exercises;
 };
 
 export const addWorkoutTemplate = async (req, res, next) => {
@@ -138,7 +140,7 @@ export const addWorkoutTemplate = async (req, res, next) => {
 
         const user = req.user;
 
-        const exercisesIds = await mapExercises(user, exercises);
+        const verifiedExercises = await mapExercises(user, exercises);
 
         const templates = await user.getWorkoutTemplates();
 
@@ -149,10 +151,10 @@ export const addWorkoutTemplate = async (req, res, next) => {
             const template = await user.createWorkoutTemplate({ name: name });
 
             const workoutTemplateExercises = [];
-            for (let i = 0; i < exercisesIds.length; i++) {
+            for (let i = 0; i < verifiedExercises.length; i++) {
                 workoutTemplateExercises.push({
                     workout_template_id: template.id, 
-                    exercise_id: exercisesIds[i], 
+                    exercise_id: verifiedExercises[i].id, 
                     position: i
                 });
             }
@@ -160,7 +162,7 @@ export const addWorkoutTemplate = async (req, res, next) => {
             await WorkoutTemplateExercise.bulkCreate(workoutTemplateExercises);
             
             
-            return res.status(200).json({ message: 'Successfully added new workout template' });
+            return res.status(200).json({ id: template.id, message: 'Successfully added new workout template' });
         }
         else {
             console.log(`Failed to add new template, ${errors[0]}`);
@@ -182,7 +184,7 @@ export const updateWorkoutTemplate = async (req, res, next) => {
 
         const { name, exercises } = req.body;
         
-        if (!name) {
+        if (!name && !exercises) {
             console.log('Failed to edit template, no data');
             const err = new Error('Failed to edit template, no data');
             err.status = 400;
@@ -203,40 +205,41 @@ export const updateWorkoutTemplate = async (req, res, next) => {
         const templates = await WorkoutTemplate.findAll({ where: { id: { [Op.not]: templateId }, user_id: req.user.id}});
 
         const errors = [];
-        
-        if (validateTemplate(name, templates, errors)) {
 
+        if (name && validateTemplate(name, templates, errors)) {
             template.name = name;
+        }
 
-            // if user provided exercises change them
-            if (exercises) {
-                const exercisesIds = await mapExercises(req.user, exercises);
-                
-                // clear current exercises
-                await template.setExercises([]);
+        // if user provided exercises change them
+        if (exercises) {
+            const verifiedExercises = await mapExercises(req.user, exercises);
+            
+            // clear current exercises
+            await template.setExercises([]);
 
-                // setup new exercises
-                const workoutTemplateExercises = [];
-                for (let i = 0; i < exercisesIds.length; i++) {
-                    workoutTemplateExercises.push({
-                        workout_template_id: template.id, 
-                        exercise_id: exercisesIds[i], 
-                        position: i
-                    });
-                }
-
-                await WorkoutTemplateExercise.bulkCreate(workoutTemplateExercises);                          
+            // setup new exercises
+            const workoutTemplateExercises = [];
+            for (let i = 0; i < verifiedExercises.length; i++) {
+                workoutTemplateExercises.push({
+                    workout_template_id: template.id, 
+                    exercise_id: verifiedExercises[i].id, 
+                    position: i
+                });
             }
 
-            await template.save();
-
-            return res.status(200).json({ message: 'Successfully edited workout template' });
+            await WorkoutTemplateExercise.bulkCreate(workoutTemplateExercises);                          
         }
-        else {
+        
+        if (errors.length > 0) {
             console.log(`Failed to edit template, ${errors[0]}`);
             const err = new Error(`Failed to edit template, ${errors[0]}`);
             err.status = 400;
-            return next(err);            
+            return next(err);
+        }
+        else {
+            await template.save();
+
+            return res.status(200).json({ message: 'Successfully edited workout template' });
         }
     }
     catch (error) {

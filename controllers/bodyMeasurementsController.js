@@ -84,9 +84,9 @@ export const addMeasurement = async (req, res, next) => {
 
         const user = req.user;
 
-        await user.createBodyMeasurement(data);
+        const measurement = await user.createBodyMeasurement(data);
 
-        return res.status(201).json({ message: 'successfully created new measure' });        
+        return res.status(201).json({ id: measurement.id, message: 'successfully created new measure' });        
     }
     catch (error) {
         console.log(`Error while trying to add new measurement: ${error}`);
@@ -161,7 +161,8 @@ export const removeMeasurement = async (req, res, next) => {
 
         await measurement.destroy();
 
-        return res.status(204);
+        console.log('Successfully removed measurement');
+        return res.status(204).json({ message: 'Successfully removed measurement' });
     }
     catch (error) {
         console.log(`Error while trying to remove measurement by id: ${error}`);

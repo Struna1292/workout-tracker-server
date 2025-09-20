@@ -102,28 +102,21 @@ const validateDescription = (description, errors) => {
     return true;
 };
 
-const mapMuscleGroups = async (names) => {
+const mapMuscleGroups = async (ids) => {
 
     const muscleGroups = await MuscleGroups.findAll();
 
-    // key is lowercase string name, value is muscle group model
+    // key is id, value is muscle group object
     const map = new Map();
 
-    for (const name of names) {
-        map.set(name.toLowerCase(), undefined);
-    }
-
     for (const currGroup of muscleGroups) {
-        const currName = currGroup.name.toLowerCase();
-        if (map.has(currName)) {
-            map.set(currName, currGroup);
-        }
+        map.set(currGroup.id, currGroup);
     }
 
     const groups = [];
-    for (const [key, value] of map) {
-        if (value != undefined) {
-            groups.push(value);
+    for (const id of ids) {
+        if (map.has(id)) {
+            groups.push(map.get(id));
         }
     }
 
@@ -134,9 +127,7 @@ export const addUserExercise = async (req, res, next) => {
     try {
 
         const data = req.body;
-
         const user = req.user;
-
         const exercises = await user.getExercises();
  
         const errors = [];
@@ -166,7 +157,7 @@ export const addUserExercise = async (req, res, next) => {
             await exercise.setMuscleGroups(groups);
         }
         
-        return res.status(200).json({ message: 'Successfully added exercise' });
+        return res.status(200).json({ id: exercise.id, message: 'Successfully added exercise' });
     }
     catch (error) {
         console.log(`Error while trying to add new exercise: ${error}`);
