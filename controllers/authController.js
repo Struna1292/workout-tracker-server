@@ -267,3 +267,64 @@ export const getEmailVerificationCode = async (req, res, next) => {
         return next(err);
     }
 };
+
+export const verifyEmail = async (req, res, next) => {
+    try {
+        const user = req.user;
+
+        if (!user.email) {
+            console.log('User has no e-mail');
+            const err = new Error('User did not provide e-mail');
+            err.status = 404;
+            return next(err);
+        }
+
+        if (user.email_verified) {
+            console.log('E-mail already verified');
+            const err = new Error('E-mail already verified');
+            err.status = 400;
+            return next(err);
+        }
+        
+        const code = req.body.code;
+
+        if (!code) {
+            console.log('There is no verification code');
+            const err = new Error('There is no verification code');
+            err.status = 400;
+            return next(err);            
+        }
+
+        if (!(await bcrypt.compare(code, user.verification_code))) {
+            console.log('Wrong verification code');
+            const err = new Error('Wrong verification code');
+            err.status = 400;
+            return next(err);
+        }
+        
+        const currDate = new Date();
+        // add 5 minutes to code generation date
+        const expirationDate = new Date(user.verification_code_date);
+        const minutes = expirationDate.getMinutes() + 5;
+        expirationDate.setMinutes(minutes);
+
+        if (currDate > expirationDate) {
+            console.log('Verification code expired');
+            const err = new Error('Verification code expired');
+            err.status = 400;
+            return next(err);            
+        }
+
+        user.email_verified = true;
+        await user.save();
+        console.log('E-mail verified');
+
+        return res.status(200).json({ message: 'Successfully verified email' });
+    }
+    catch (error) {
+        console.log(`Error while verifying code: ${error}`);
+        const err = new Error('Internal server error while verifying code');
+        err.status = 500;
+        return next(err);
+    }
+};

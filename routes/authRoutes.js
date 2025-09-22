@@ -1,7 +1,15 @@
 import express from 'express';
+import checkBody from '../middlewares/checkBody.js';
 import authToken from '../middlewares/authToken.js';
 import loadUser from '../middlewares/loadUser.js';
-import { login, register, refreshToken, logoutToken, getEmailVerificationCode } from '../controllers/authController.js';
+import { 
+    login, 
+    register, 
+    refreshToken, 
+    logoutToken, 
+    getEmailVerificationCode, 
+    verifyEmail 
+} from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -12,5 +20,8 @@ router.post('/logout', logoutToken);
 
 // get e-mail with verification code
 router.get('/verify-email', [authToken, loadUser], getEmailVerificationCode);
+
+// verify email with code
+router.post('/verify-email', [checkBody, authToken, loadUser], verifyEmail);
 
 export default router;
