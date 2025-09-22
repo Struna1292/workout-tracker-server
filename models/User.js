@@ -17,6 +17,23 @@ const User = db.define(
             type: DataTypes.STRING,
             allowNull: false,            
         },
+        email: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        email_verified: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
+        verification_code: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        verification_code_date: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
         refresh_token: {
             type: DataTypes.STRING,
             allowNull: true,            
