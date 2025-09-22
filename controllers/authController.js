@@ -1,6 +1,8 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import sendEmail from '../utils/sendEmail.js';
+import generateRandomDigits from '../utils/generateRandomDigits.js';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION;
@@ -200,5 +202,68 @@ export const logoutToken = async (req, res, next) => {
     }
     else {
         return res.status(406).json({ message: 'Unauthorized' });
+    }
+};
+
+export const getEmailVerificationCode = async (req, res, next) => {
+    try {
+
+        const user = req.user;
+
+        if (!user) {
+            console.log('User does not exist');
+            const err = new Error('User does not exist');
+            err.status = 404;
+            return next(err);
+        }
+
+        if (!user.email) {
+            console.log('User has no e-mail');
+            const err = new Error('User did not provide e-mail');
+            err.status = 404;
+            return next(err);
+        }
+
+        // generate 6 digits random code
+        const randomCode = generateRandomDigits(6);
+
+        if (!randomCode) {
+            console.log('Failed to generate random code');
+            const err = new Error('Internal server error while generating random code');
+            err.status = 500;
+            return next(err);
+        }
+
+        const subject = 'E-mail verification';
+        const message = `
+            <h1>Verification Code<h1>
+            <h2>${randomCode}</h2>
+        `;
+        const error = await sendEmail(user.email, subject, message);
+
+        if (error) {
+            const err = new Error('Internal server error while trying to send email');
+            err.status = 500;
+            return next(err);
+        }
+
+
+        // hash code
+        const saltRounds = 10;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const codeHash = await bcrypt.hash(randomCode, salt);
+
+        user.verification_code = codeHash;
+        user.verification_code_date = new Date();
+
+        await user.save();
+
+        return res.status(200).json({ message: 'Successfully sent verification code'});
+    }
+    catch (error) {
+        console.log(`Error while sending email verification: ${error}`);
+        const err = new Error('Internal server error while sending email verification');
+        err.status = 500;
+        return next(err);
     }
 };
