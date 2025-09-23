@@ -10,6 +10,9 @@ const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION;
 
+const RESET_PASSWORD_TOKEN_SECRET = process.env.RESET_PASSWORD_TOKEN_SECRET;
+const RESET_PASSWORD_TOKEN_EXPIRATION = process.env.RESET_PASSWORD_TOKEN_EXPIRATION;
+
 export const login = async (req, res, next) => {
     try {
         const { username, password } = req.body;
@@ -334,7 +337,9 @@ export const verifyEmail = async (req, res, next) => {
 
         user.email_verified = true;
         await user.save();
-        
+
+        await confirmationCode.destroy();
+
         console.log('E-mail verified');
         return res.status(200).json({ message: 'Successfully verified email' });
     }
@@ -425,6 +430,163 @@ export const getForgotPasswordCode = async (req, res, next) => {
     catch (error) {
         console.log(`Error while sending email with password recovery code: ${error}`);
         const err = new Error('Internal server error while sending email with password recovery code');
+        err.status = 500;
+        return next(err);
+    }
+};
+
+export const verifyResetCode = async (req, res, next) => {
+    try {
+        const { username, code } = req.body;
+
+        if (!username) {
+            console.log('No username provided');
+            const err = new Error('No username provided');
+            err.status = 400;
+            return next(err);
+        }
+
+        const user = await User.findOne({ where: { username: username } });
+
+        if (!user) {
+            console.log('User does not exist');
+            const err = new Error('User does not exist');
+            err.status = 404;
+            return next(err);
+        }
+
+        if (!code) {
+            console.log('There is no verification code');
+            const err = new Error('There is no verification code');
+            err.status = 400;
+            return next(err);            
+        }
+
+        const confirmationCode = (await user.getCodes({ where: { type: 'forgot-password' } }))[0];
+
+        if (!(await bcrypt.compare(code, confirmationCode.code))) {
+            console.log('Wrong reset password code');
+            const err = new Error('Wrong reset password code');
+            err.status = 400;
+            return next(err);
+        }
+        
+        const currDate = new Date();
+        // add 5 minutes to code generation date
+        const expirationDate = new Date(confirmationCode.code_date);
+        const minutes = expirationDate.getMinutes() + 5;
+        expirationDate.setMinutes(minutes);
+
+        if (currDate > expirationDate) {
+            console.log('Reset password code expired');
+            const err = new Error('Reset password code expired');
+            err.status = 400;
+            return next(err);
+        }
+
+        const resetPasswordToken = jwt.sign({
+            id: user.id,
+            username: user.username,
+        }, RESET_PASSWORD_TOKEN_SECRET, { expiresIn: RESET_PASSWORD_TOKEN_EXPIRATION });
+
+        await confirmationCode.destroy();
+
+        console.log('Correct reset password code');
+        return res.status(200).json({ token: resetPasswordToken, message: 'Correct reset password code' });
+    }
+    catch (error) {
+        console.log(`Error while verifying reset password code: ${error}`);
+        const err = new Error('Internal server error while verifying reset password code');
+        err.status = 500;
+        return next(err);
+    }    
+};
+
+export const resetPassword = async (req, res, next) => {
+    // check token
+    const header = req.headers['authorization'];
+    if (!header) {
+        console.log('No authorization header');
+        const err = new Error('No authorization header');
+        err.status = 401;
+        return next(err);
+    }
+
+    const token = header.split('Bearer ')[1];
+    if (!token) {
+        console.log('Invalid authorization header format');
+        const err = new Error('Invalid authorization header format');
+        err.status = 401;
+        return next(err);        
+    }
+
+    try {
+        const decoded = jwt.verify(token, RESET_PASSWORD_TOKEN_SECRET);
+        req.user = decoded;
+    }
+    catch (error) {
+        console.log(`Error while trying to verify token: ${error}`);
+        if (error.name == 'TokenExpiredError') {
+            const err = new Error('Token expired');
+            err.status = 401;
+            return next(err);
+        }
+        else {
+            const err = new Error('Invalid token');
+            err.status = 403;
+            return next(err);
+        }
+    }
+
+    // load user from token
+    try {
+        const user = await User.findByPk(req.user.id);
+
+        if (!user) {
+            console.log('User does not exist');
+            const err = new Error('User does not exist');
+            err.status = 404;
+            return next(err);
+        }
+        
+        req.user = user;
+    }
+    catch (error) {
+        console.log(`Failed to load user: ${error}`);
+        const err = new Error('Internal server error while loading user');
+        err.status = 500;
+        return next(err);
+    }    
+
+    // validate password and change it
+    try {
+
+        const { password } = req.body;
+
+        if (!password) {
+            console.log('No password provided');
+            const err = new Error('No password provided');
+            err.status = 400;
+            return next(err);
+        }
+
+        const user = req.user;
+
+        // hash password
+        const saltRounds = 10;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const hash = await bcrypt.hash(password, salt);
+        
+        user.password = hash;
+        
+        await user.save();
+
+        console.log('Successfully reseted user password');
+        return res.status(200).json({ message: 'Successfully reseted password' });
+    }
+    catch (error) {
+        console.log(`Error while trying to reset password: ${error}`);
+        const err = new Error('Internal server error while trying to reset password');
         err.status = 500;
         return next(err);
     }

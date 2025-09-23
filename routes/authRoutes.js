@@ -9,7 +9,9 @@ import {
     logoutToken, 
     getEmailVerificationCode, 
     verifyEmail,
-    getForgotPasswordCode 
+    getForgotPasswordCode,
+    verifyResetCode,
+    resetPassword 
 } from '../controllers/authController.js';
 
 const router = express.Router();
@@ -26,8 +28,12 @@ router.get('/verify-email', [authToken, loadUser], getEmailVerificationCode);
 router.post('/verify-email', [checkBody, authToken, loadUser], verifyEmail);
 
 // get e-mail with code to reset password
-router.post('/forgot-password', [checkBody], getForgotPasswordCode);
+router.post('/forgot-password', checkBody, getForgotPasswordCode);
 
+// verify reset password code and get token with permission to reset password
+router.post('/verify-reset-code', checkBody, verifyResetCode);
 
+// reset password
+router.post('/reset-password', checkBody, resetPassword);
 
 export default router;
