@@ -8,7 +8,8 @@ import {
     refreshToken, 
     logoutToken, 
     getEmailVerificationCode, 
-    verifyEmail 
+    verifyEmail,
+    getForgotPasswordCode 
 } from '../controllers/authController.js';
 
 const router = express.Router();
@@ -23,5 +24,10 @@ router.get('/verify-email', [authToken, loadUser], getEmailVerificationCode);
 
 // verify email with code
 router.post('/verify-email', [checkBody, authToken, loadUser], verifyEmail);
+
+// get e-mail with code to reset password
+router.post('/forgot-password', [checkBody], getForgotPasswordCode);
+
+
 
 export default router;

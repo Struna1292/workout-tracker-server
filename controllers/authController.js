@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js';
 import generateRandomDigits from '../utils/generateRandomDigits.js';
+import ConfirmationCode from '../models/ConfirmationCode.js';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION;
@@ -261,8 +262,8 @@ export const getEmailVerificationCode = async (req, res, next) => {
         return res.status(200).json({ message: 'Successfully sent verification code'});
     }
     catch (error) {
-        console.log(`Error while sending email verification: ${error}`);
-        const err = new Error('Internal server error while sending email verification');
+        console.log(`Error while sending email with verification code: ${error}`);
+        const err = new Error('Internal server error while sending email with verification code');
         err.status = 500;
         return next(err);
     }
@@ -324,6 +325,90 @@ export const verifyEmail = async (req, res, next) => {
     catch (error) {
         console.log(`Error while verifying code: ${error}`);
         const err = new Error('Internal server error while verifying code');
+        err.status = 500;
+        return next(err);
+    }
+};
+
+export const getForgotPasswordCode = async (req, res, next) => {
+    try {
+        const { username } = req.body;
+
+        if (!username) {
+            console.log('No username provided');
+            const err = new Error('No username provided');
+            err.status = 400;
+            return next(err);
+        }
+
+        const user = await User.findOne({ where: { username: username } });
+
+        if (!user) {
+            console.log('User does not exist');
+            const err = new Error('User does not exist');
+            err.status = 404;
+            return next(err);
+        }
+
+        if (!user.email_verified) {
+            console.log('User has no verified email');
+            const err = new Error('User has no verified email');
+            err.status = 400;
+            return next(err);            
+        }
+
+        // generate 6 digits random code
+        const randomCode = generateRandomDigits(6);
+        if (!randomCode) {
+            console.log('Failed to generate random code');
+            const err = new Error('Internal server error while generating random code');
+            err.status = 500;
+            return next(err);
+        }
+
+        // hash code
+        const saltRounds = 10;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const codeHash = await bcrypt.hash(randomCode, salt);
+
+        const codeData = {
+            user_id: user.id,
+            code: codeHash,
+            code_date: new Date(),
+            type: 'forgot-password'
+        };
+
+        // check if user already has forgot password code
+        const code = (await user.getCodes({ where: { type: 'forgot-password' } }))[0];
+        if (code) {
+            code.code = codeData.code;
+            code.code_date = codeData.code_date;
+
+            await code.save();
+        }
+        else {
+            await ConfirmationCode.create(codeData);
+        }
+
+        const subject = 'Password recovery';
+        const message = `
+            <h1>Password Recovery Code<h1>
+            <h2>${randomCode}</h2>
+        `;
+        const error = await sendEmail(user.email, subject, message);
+
+        if (error) {
+            const err = new Error('Internal server error while trying to send email');
+            err.status = 500;
+            return next(err);
+        }        
+
+        console.log('Successfully sent email with forgot password code');
+        return res.status(200).json({ message: 'Successfully sent forgot password code' });
+    }
+    catch (error) {
+        console.log(`Error while sending email with password recovery code: ${error}`);
+        const err = new Error('Internal server error while sending email with password recovery code');
         err.status = 500;
         return next(err);
     }
