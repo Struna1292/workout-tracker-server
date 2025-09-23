@@ -8,6 +8,7 @@ import ExerciseMuscleGroup from './ExerciseMuscleGroup.js';
 import Workout from './Workout.js';
 import WorkoutExercise from './WorkoutExercise.js';
 import Set from './Set.js';
+import ConfirmationCode from './ConfirmationCode.js';
 
 // relations between user and his body measurements
 User.hasMany(BodyMeasurement, { foreignKey: 'user_id', as: 'BodyMeasurements', onDelete: 'CASCADE'});
@@ -44,3 +45,7 @@ Set.belongsTo(WorkoutExercise, { foreignKey: 'workout_exercise_id', as: 'Exercis
 // relations between workout and template its been based on
 WorkoutTemplate.hasMany(Workout, { foreignKey: 'workout_template_id', as: 'Workouts', onDelete: 'NO ACTION' });
 Workout.belongsTo(WorkoutTemplate, { foreignKey: 'workout_template_id', as: 'Template', onDelete: 'NO ACTION' });
+
+// relations between user and his confirmation codes
+User.hasMany(ConfirmationCode, { foreignKey: 'user_id', as: 'Codes', onDelete: 'CASCADE' });
+ConfirmationCode.belongsTo(User, { foreignKey: 'user_id', as: 'User', onDelete: 'NO ACTION' });

@@ -26,14 +26,6 @@ const User = db.define(
             allowNull: false,
             defaultValue: false,
         },
-        verification_code: {
-            type: DataTypes.STRING,
-            allowNull: true,
-        },
-        verification_code_date: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        },
         refresh_token: {
             type: DataTypes.STRING,
             allowNull: true,            
