@@ -9,6 +9,7 @@ import './models/ExerciseMuscleGroup.js';
 import './models/Workout.js';
 import './models/WorkoutExercise.js';
 import './models/Set.js';
+import './models/ConfirmationCode.js';
 
 import './models/associations.js';
 
