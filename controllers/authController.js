@@ -235,6 +235,30 @@ export const getEmailVerificationCode = async (req, res, next) => {
             return next(err);
         }
 
+        // hash code
+        const saltRounds = 10;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const codeHash = await bcrypt.hash(randomCode, salt);
+
+        const codeData = {
+            user_id: user.id,
+            code: codeHash,
+            code_date: new Date(),
+            type: 'email-verification'
+        };
+
+        // check if user already has email verification code
+        const code = (await user.getCodes({ where: { type: 'email-verification' } }))[0];
+        if (code) {
+            code.code = codeData.code;
+            code.code_date = codeData.code_date;
+
+            await code.save();
+        }
+        else {
+            await ConfirmationCode.create(codeData);
+        }
+        
         const subject = 'E-mail verification';
         const message = `
             <h1>Verification Code<h1>
@@ -246,19 +270,9 @@ export const getEmailVerificationCode = async (req, res, next) => {
             const err = new Error('Internal server error while trying to send email');
             err.status = 500;
             return next(err);
-        }
+        }        
 
-
-        // hash code
-        const saltRounds = 10;
-        const salt = await bcrypt.genSalt(saltRounds);
-        const codeHash = await bcrypt.hash(randomCode, salt);
-
-        user.verification_code = codeHash;
-        user.verification_code_date = new Date();
-
-        await user.save();
-
+        console.log('Successfully sent email verification code');
         return res.status(200).json({ message: 'Successfully sent verification code'});
     }
     catch (error) {
@@ -296,7 +310,9 @@ export const verifyEmail = async (req, res, next) => {
             return next(err);            
         }
 
-        if (!(await bcrypt.compare(code, user.verification_code))) {
+        const confirmationCode = (await user.getCodes({ where: { type: 'email-verification' } }))[0];
+
+        if (!(await bcrypt.compare(code, confirmationCode.code))) {
             console.log('Wrong verification code');
             const err = new Error('Wrong verification code');
             err.status = 400;
@@ -305,7 +321,7 @@ export const verifyEmail = async (req, res, next) => {
         
         const currDate = new Date();
         // add 5 minutes to code generation date
-        const expirationDate = new Date(user.verification_code_date);
+        const expirationDate = new Date(confirmationCode.code_date);
         const minutes = expirationDate.getMinutes() + 5;
         expirationDate.setMinutes(minutes);
 
@@ -318,8 +334,8 @@ export const verifyEmail = async (req, res, next) => {
 
         user.email_verified = true;
         await user.save();
+        
         console.log('E-mail verified');
-
         return res.status(200).json({ message: 'Successfully verified email' });
     }
     catch (error) {
