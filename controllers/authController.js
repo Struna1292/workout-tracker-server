@@ -579,6 +579,8 @@ export const resetPassword = async (req, res, next) => {
         
         user.password = hash;
         
+        // clear refresh token
+        user.refresh_token = '';
         await user.save();
 
         console.log('Successfully reseted user password');
