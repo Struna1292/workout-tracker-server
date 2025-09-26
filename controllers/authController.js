@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js';
 import generateRandomDigits from '../utils/generateRandomDigits.js';
 import ConfirmationCode from '../models/ConfirmationCode.js';
+import { OAuth2Client } from 'google-auth-library';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION;
@@ -12,6 +13,8 @@ const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION;
 
 const RESET_PASSWORD_TOKEN_SECRET = process.env.RESET_PASSWORD_TOKEN_SECRET;
 const RESET_PASSWORD_TOKEN_EXPIRATION = process.env.RESET_PASSWORD_TOKEN_EXPIRATION;
+
+const EXPECTED_AUDIENCE = process.env.GOOGLE_CLIENT_ID;
 
 export const login = async (req, res, next) => {
     try {
@@ -206,6 +209,41 @@ export const logoutToken = async (req, res, next) => {
     }
     else {
         return res.status(406).json({ message: 'Unauthorized' });
+    }
+};
+
+export const loginWithGoogle = async (req, res, next) => {
+    try {
+        const { idToken } = req.body;
+
+        if (!idToken) {
+            console.log('No google id token to verify');
+            const err = new Error('No google id token to verify');
+            err.status = 400;
+            return next(err);
+        }
+
+        const oAuth2Client = new OAuth2Client();
+
+        const result = await oAuth2Client.verifyIdToken({
+            idToken,
+            EXPECTED_AUDIENCE,
+        });
+
+        console.log(result);
+
+        // google userId
+        const userId = result.payload.sub;
+
+        console.log(userId);
+
+        return res.status(200).json({ message: 'Successfully logged in with google' });
+    }
+    catch (error) {
+        console.log(`Error while trying to login with google token: ${error}`);
+        const err = new Error('Internal server error while trying to login with google');
+        err.status = 500;
+        return next(err);
     }
 };
 

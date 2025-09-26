@@ -6,12 +6,13 @@ import {
     login, 
     register, 
     refreshToken, 
-    logoutToken, 
+    logoutToken,
+    loginWithGoogle, 
     getEmailVerificationCode, 
     verifyEmail,
     getForgotPasswordCode,
     verifyResetCode,
-    resetPassword 
+    resetPassword,
 } from '../controllers/authController.js';
 
 const router = express.Router();
@@ -20,6 +21,9 @@ router.post('/login', login);
 router.post('/register', register);
 router.post('/refresh', refreshToken);
 router.post('/logout', logoutToken);
+
+// login with google id token
+router.post('/google', checkBody, loginWithGoogle);
 
 // get e-mail with verification code
 router.get('/verify-email', [authToken, loadUser], getEmailVerificationCode);
