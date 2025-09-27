@@ -230,14 +230,43 @@ export const loginWithGoogle = async (req, res, next) => {
             EXPECTED_AUDIENCE,
         });
 
-        console.log(result);
-
         // google userId
         const userId = result.payload.sub;
 
-        console.log(userId);
+        let user = await User.findOne({ where: { google_id: userId }});
 
-        return res.status(200).json({ message: 'Successfully logged in with google' });
+        if (!user) {
+            user = await User.create({
+                google_id: userId,
+                username: '',
+                password: '',
+            });
+        }
+
+        const accessToken = jwt.sign({
+            id: user.id,
+        }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRATION});
+
+        const refreshToken = jwt.sign({
+            id: user.id,
+        }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRATION});
+
+        // hash refresh token
+        const saltRounds = 10;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const hash = await bcrypt.hash(refreshToken, salt);        
+        
+        user.refresh_token = hash;
+        await user.save();
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days in miliseconds
+        });        
+
+        return res.status(200).json({ token: accessToken, message: 'Successfully logged in with google' });
     }
     catch (error) {
         console.log(`Error while trying to login with google token: ${error}`);
