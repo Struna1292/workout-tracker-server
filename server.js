@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import './db.js';
+import './config.js';
 import errorHandler from './middlewares/errorHandler.js';
 import logger from './middlewares/logger.js';
 import notFound from './middlewares/notFound.js';
