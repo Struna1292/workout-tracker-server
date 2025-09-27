@@ -9,6 +9,10 @@ const User = db.define(
             autoIncrement: true,
             allowNull: false,
         },
+        google_id: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         username: {
             type: DataTypes.STRING,
             allowNull: false,
