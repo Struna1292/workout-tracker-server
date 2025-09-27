@@ -19,4 +19,5 @@ try {
 }
 catch (error) {
     console.error('Database tables sync failed:', error);
+    process.exit(1);
 }
