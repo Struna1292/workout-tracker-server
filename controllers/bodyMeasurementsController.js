@@ -1,4 +1,4 @@
-import User from '../models/User.js';
+import { validateMeasurement } from '../validations/bodyMeasurementValidations.js';
 
 export const userMeasurements = async (req, res, next) => {
     try {
@@ -23,70 +23,40 @@ export const userMeasurements = async (req, res, next) => {
     }
 };
 
-const validateNewMeasure = (reqBody, errors) => {
-    if (!reqBody) {
-        return undefined;
-    }
-
-    const validated = {
-        weight: undefined,
-        arm: undefined, 
-        forearm: undefined, 
-        chest: undefined,
-        waist: undefined, 
-        hips: undefined,
-        thigh: undefined,
-        calf: undefined
-    };
-
-    // check if there is atleast one valid parameter
-    let validParameter = false;
-
-    for (let key in validated) {
-        if (reqBody[key]) {
-            const value = reqBody[key];
-
-            if (value > 0) {
-                validated[key] = reqBody[key];
-                validParameter = true;
-            }
-            else {
-                // add error information
-                errors.push(`${key} needs to be positive number`);
-            }
-        }           
-    }
-    
-    if (!validParameter) {
-        return undefined;
-    }
-
-    return validated;
-};
-
-
 export const addMeasurement = async (req, res, next) => {
     try {
+        const newMeasurement = {
+            weight: null,
+            arm: null, 
+            forearm: null, 
+            chest: null,
+            waist: null, 
+            hips: null,
+            thigh: null,
+            calf: null,
+            date: null
+        };
+
+        const measurementData = req.body;
+
         const errors = [];
 
-        const data = validateNewMeasure(req.body, errors);
+        validateMeasurement(newMeasurement, measurementData, errors);
 
-        if (!data) {
-            console.log('Failed to create measurement there is no valid data');
-            let message = 'Cant create new user measurement without any valid data.';
-            for (const error of errors) {
-                message += '\n' + error;
-            }   
-            const err = new Error(message);
+        if (errors.length > 0) {
+            console.log('Failed to add measurement');
+            const err = new Error('Failed to add measurement');
             err.status = 422;
+            err.details = errors;
             return next(err);
         }
 
         const user = req.user;
 
-        const measurement = await user.createBodyMeasurement(data);
+        const measurement = await user.createBodyMeasurement(newMeasurement);
 
-        return res.status(201).json({ id: measurement.id, message: 'successfully created new measure' });        
+        console.log('Successfully added measurement');
+        return res.status(201).json({ id: measurement.id, message: 'Successfully added measurement' });
     }
     catch (error) {
         console.log(`Error while trying to add new measurement: ${error}`);
@@ -99,7 +69,7 @@ export const addMeasurement = async (req, res, next) => {
 export const updateMeasurement = async (req, res, next) => {
     try {
         const measurementId = req.params.id;
-
+        const measurementData = req.body;
         const user = req.user;
 
         const measurement = (await user.getBodyMeasurements({
@@ -111,26 +81,36 @@ export const updateMeasurement = async (req, res, next) => {
             console.log('Failed to update measurement. Measurement does not exist');
             const err = new Error('Failed to update measurement. Measurement does not exist');
             err.status = 404;
-            return next(err);            
-        }
-
-        const errors = [];
-
-        const data = validateNewMeasure(req.body, errors);
-
-        if (!data) {
-            console.log('Failed to update measurement there is no valid data');
-            let message = 'Cant update user measurement without any valid data.';
-            for (const error of errors) {
-                message += '\n' + error;
-            }   
-            const err = new Error(message);
-            err.status = 422;
             return next(err);
         }
 
-        await measurement.update(data);
+        const newMeasurement = {
+            weight: null,
+            arm: null, 
+            forearm: null, 
+            chest: null,
+            waist: null, 
+            hips: null,
+            thigh: null,
+            calf: null,
+            date: null
+        };
 
+        const errors = [];
+
+        validateMeasurement(newMeasurement, measurementData, errors);
+
+        if (errors.length > 0) {
+            console.log('Failed to update measurement');
+            const err = new Error('Failed to update measurement');
+            err.status = 422;
+            err.details = errors;
+            return next(err);
+        }
+
+        await measurement.update(newMeasurement);
+
+        console.log('Successfully updated measurement');
         return res.status(200).json({ message: 'Successfully updated measurement' });
     }
     catch (error) {
