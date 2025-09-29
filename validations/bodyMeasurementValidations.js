@@ -16,7 +16,6 @@ export const validateMeasurement = (newMeasurement, measurementData, errors) => 
     // validate values
     for (const field in newMeasurement) {
         if (newMeasurement[field] == null) {
-            errors.push(`Missing ${field}`);
             continue;
         }
         

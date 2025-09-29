@@ -15,43 +15,35 @@ const BodyMeasurement = db.define(
         },
         weight: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,
+            allowNull: true,
         },
         arm: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,
+            allowNull: true,
         },
         forearm: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,            
+            allowNull: true,         
         },
         chest: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,            
+            allowNull: true,            
         },
         waist: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,            
+            allowNull: true,
         },
         hips: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,            
+            allowNull: true,
         },
         thigh: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,            
+            allowNull: true,        
         },
         calf: {
             type: DataTypes.FLOAT,
-            allowNull: false,
-            defaultValue: 0,            
+            allowNull: true,         
         },
         date: {
             type: DataTypes.DATE,
