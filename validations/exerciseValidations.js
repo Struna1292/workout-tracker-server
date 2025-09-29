@@ -46,8 +46,17 @@ export const validateDescription = (newExercise, exerciseData, errors) => {
 export const validateMuscleGroups = (newExercise, exerciseData, errors, muscleGroupsIdsSet) => {
     const muscleGroups = exerciseData.muscleGroups;
 
+    if (!muscleGroups) {
+        return;
+    }
+    
+    if (!Array.isArray(muscleGroups)) {
+        errors.push('muscleGroups needs to be positive integer array');
+        return;
+    }
+
     for (const muscleGroup of muscleGroups) {
-        if (isNaN(muscleGroup) && !Number.isInteger() && muscleGroup < 0) {
+        if (isNaN(muscleGroup) || !Number.isInteger(muscleGroup) || muscleGroup < 0) {
             errors.push(`${muscleGroup} is invalid. Muscle group id needs to be positive integer.`);
             continue;
         }
