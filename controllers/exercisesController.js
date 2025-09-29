@@ -1,6 +1,7 @@
 import Exercise from '../models/Exercise.js';
 import MuscleGroups from '../models/MuscleGroup.js';
 import { Op } from 'sequelize';
+import { validateName, validateDescription, validateMuscleGroups } from '../validations/exerciseValidations.js';
 
 export const getUserExercises = async (req, res, next) => {
     try {
@@ -58,104 +59,58 @@ export const getGlobalExercises = async (req, res, next) => {
     }
 };
 
-const validateName = (name, exercises, errors) => {
-    // check if there is name
-    if (!name) {
-        errors.push('exercise needs name');
-        return false;
+const getExercisesNamesSet = (userExercises, globalExercises) => {
+    const exercisesNamesSet = new Set();
+
+    for (const exercise of userExercises) {
+        const currName = exercise.name.toLowerCase();
+        exercisesNamesSet.add(currName);
     }
 
-    // check name length
-    if (name.length == 0 || name.length >= 256) {
-        errors.push('Exercise name length must be between 1 or 255 characters long');
-        return false;
+    for (const exercise of globalExercises) {
+        const currName = exercise.name.toLowerCase();
+        exercisesNamesSet.add(currName);
     }
 
-    const currName = name.toLowerCase();
-
-    // check characters
-    for (const char of currName) {
-        if (!((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == ' ')) {
-            errors.push('Exercise name can contain only english letters, digits, and spaces');
-            return false;
-        }
-    }
-
-    // check if it already exists
-    for (const exercise of exercises) {
-        if (exercise.name.toLowerCase() == currName) {
-            errors.push('Exercise with this name already exists');
-            return false;
-        }
-    }
-
-    return true;
-};
-
-const validateDescription = (description, errors) => {
-
-    if (description.length > 1000) {
-        errors.push('description cant be longer than 1000 characters');
-        return false;
-    }
-
-    return true;
-};
-
-const mapMuscleGroups = async (ids) => {
-
-    const muscleGroups = await MuscleGroups.findAll();
-
-    // key is id, value is muscle group object
-    const map = new Map();
-
-    for (const currGroup of muscleGroups) {
-        map.set(currGroup.id, currGroup);
-    }
-
-    const groups = [];
-    for (const id of ids) {
-        if (map.has(id)) {
-            groups.push(map.get(id));
-        }
-    }
-
-    return groups;
+    return exercisesNamesSet;
 };
 
 export const addUserExercise = async (req, res, next) => {
     try {
 
-        const data = req.body;
+        const exerciseData = req.body;
         const user = req.user;
-        const exercises = await user.getExercises();
+        const userExercises = await user.getExercises();
+        const globalExercises = await Exercise.findAll({ where: { user_id: null } });
+        const muscleGroups = await MuscleGroups.findAll();
  
+        const exercisesNamesSet = getExercisesNamesSet(userExercises, globalExercises);
+        const muscleGroupsIdsSet = new Set(muscleGroups.map((mG) => mG.id));
+        
+        const newExercise = {
+            name: null,
+            description: null,
+            muscleGroups: null
+        };
+
         const errors = [];
 
-        validateName(data.name, exercises, errors);
+        validateName(newExercise, exerciseData, errors, exercisesNamesSet);
 
-        if (data.description) {
-            validateDescription(data.description, errors);
-        }
-        else {
-            data.description = '';
-        }
+        validateDescription(newExercise, exerciseData, errors);
 
-        if (errors[0]) {
-            console.log(`Failed to add new exercise, ${errors[0]}`);
-            const err = new Error(`Failed to add new exercise, ${errors[0]}`);
-            err.status = 400;
-            return next(err);              
+        validateMuscleGroups(newExercise, exerciseData, errors, muscleGroupsIdsSet);
+
+        if (errors.length > 0) {
+            console.log('Failed to add new exercise');
+            const err = new Error('Failed to add new exercise');
+            err.status = 422;
+            err.details = errors;
+            return next(err);
         }
 
-        const exercise = await user.createExercise({ name: data.name, description: data.description });
-
-        if (data.muscleGroups) {
-
-            const groups = await mapMuscleGroups(data.muscleGroups);
-
-            await exercise.setMuscleGroups(groups);
-        }
+        const exercise = await user.createExercise(newExercise);
+        await exercise.setMuscleGroups(newExercise.muscleGroups);
         
         return res.status(200).json({ id: exercise.id, message: 'Successfully added exercise' });
     }
