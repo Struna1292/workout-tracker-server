@@ -112,7 +112,7 @@ export const addUserExercise = async (req, res, next) => {
         const exercise = await user.createExercise(newExercise);
         await exercise.setMuscleGroups(newExercise.muscleGroups);
         
-        return res.status(200).json({ id: exercise.id, message: 'Successfully added exercise' });
+        return res.status(201).json({ id: exercise.id, message: 'Successfully added exercise' });
     }
     catch (error) {
         console.log(`Error while trying to add new exercise: ${error}`);
@@ -124,22 +124,9 @@ export const addUserExercise = async (req, res, next) => {
 
 export const editUserExercise = async (req, res, next) => {
     try {
-        const data = req.body;
-
-        // check if user sent any proper data to change
-        if (!data.name && !data.description && !data.muscleGroups) {
-            console.log('User did not sent any data for change');
-            const err = new Error('There is no data to change, proper fields: name, description, muscleGroups');
-            err.status = 400;
-            return next(err);
-        }
-
         const exerciseId = req.params.id;
-
         const user = req.user;
 
-        // all user exercises except the one to be edited
-        const exercises = await user.getExercises({ where: { id: { [Op.not]: exerciseId } }});
         // user exercise to edit
         const exercise = (await user.getExercises({ where: { id: exerciseId }}))[0];
 
@@ -150,34 +137,40 @@ export const editUserExercise = async (req, res, next) => {
             return next(err);
         }
 
+        const exerciseData = req.body;
+
+        // all user exercises except the one to be edited
+        const userExercises = await user.getExercises({ where: { id: { [Op.not]: exerciseId } }});
+        const globalExercises = await Exercise.findAll({ where: { user_id: null } });
+        const muscleGroups = await MuscleGroups.findAll();
+
+        const exercisesNamesSet = getExercisesNamesSet(userExercises, globalExercises);
+        const muscleGroupsIdsSet = new Set(muscleGroups.map((mG) => mG.id));
+
+        const newExercise = {
+            name: null,
+            description: null,
+            muscleGroups: null
+        };        
+
         const errors = [];
 
-        if (data.name && validateName(data.name, exercises, errors)) {
-            exercise.name = data.name;
+        validateName(newExercise, exerciseData, errors, exercisesNamesSet);
+
+        validateDescription(newExercise, exerciseData, errors);
+
+        validateMuscleGroups(newExercise, exerciseData, errors, muscleGroupsIdsSet);
+
+        if (errors.length > 0) {
+            console.log('Failed to edit exercise');
+            const err = new Error('Failed to edit exercise');
+            err.status = 422;
+            err.details = errors;
+            return next(err);
         }
 
-        if (data.description && validateDescription(data.description, errors)) {
-            exercise.description = data.description;
-        }
-
-        if (errors[0]) {
-            console.log(`Failed to edit exercise, ${errors[0]}`);
-            const err = new Error(`Failed to edit exercise, ${errors[0]}`);
-            err.status = 400;
-            return next(err);              
-        }
-
-        if (data.muscleGroups) {
-            const groups = await mapMuscleGroups(data.muscleGroups);
-
-            // clear current muscle groups
-            await exercise.setMuscleGroups([]);
-
-            // set new muscle groups
-            await exercise.setMuscleGroups(groups);
-        }
-
-        await exercise.save();
+        await exercise.update(newExercise);
+        await exercise.setMuscleGroups(newExercise.muscleGroups);
 
         return res.status(200).json({ message: 'Successfully edited exercise' });
     }
