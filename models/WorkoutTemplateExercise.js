@@ -6,17 +6,14 @@ const WorkoutTemplateExercise = db.define(
         workout_template_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            primaryKey: true,
         },
         exercise_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            primaryKey: true,
         },
         position: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            primaryKey: true,
         }
     }, {
         tableName: 'workout_templates_exercises',
