@@ -15,7 +15,7 @@ const router = express.Router();
 router.get('', [authToken, loadUser], getUserWorkouts);
 
 // add user workout
-router.post('', [authToken, loadUser], addWorkout);
+router.post('', [checkBody, authToken, loadUser], addWorkout);
 
 // edit user workout
 router.put('/:id', [checkBody, authToken, loadUser], editWorkout);
