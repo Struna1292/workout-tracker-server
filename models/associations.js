@@ -35,8 +35,8 @@ User.hasMany(Workout, { foreignKey: 'user_id', as: 'Workouts', onDelete: 'CASCAD
 Workout.belongsTo(User, { foreignKey: 'user_id', as: 'User', onDelete: 'NO ACTION' });
 
 // relations between workouts and exercises in it
-Workout.belongsToMany(Exercise, { through: {model: WorkoutExercise, unique: false}, foreignKey: 'workout_id', otherKey: 'exercise_id' });
-Exercise.belongsToMany(Workout, { through: {model: WorkoutExercise, unique: false}, foreignKey: 'exercise_id', otherKey: 'workout_id' });
+Workout.belongsToMany(Exercise, { through: {model: WorkoutExercise, unique: false}, foreignKey: 'workout_id', otherKey: 'exercise_id', as: 'Exercises' });
+Exercise.belongsToMany(Workout, { through: {model: WorkoutExercise, unique: false}, foreignKey: 'exercise_id', otherKey: 'workout_id', as: 'Workouts' });
 
 // relations between workout exercise and it sets
 WorkoutExercise.hasMany(Set, { foreignKey: 'workout_exercise_id', as: 'Sets', onDelete: 'CASCADE' });
