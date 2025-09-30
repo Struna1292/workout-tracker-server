@@ -1,6 +1,11 @@
 import Exercise from '../models/Exercise.js';
 import WorkoutExercise from '../models/WorkoutExercise.js';
-import Set from '../models/Set.js';
+import { 
+    validateTemplate, 
+    validateDuration, 
+    validateDate, 
+    validateExercises 
+} from '../validations/workoutValidations.js';
 
 export const getUserWorkouts = async (req, res, next) => {
     try {
@@ -52,112 +57,59 @@ export const getUserWorkouts = async (req, res, next) => {
     }
 };
 
-// maps global and user exercises where key is id, value is exercise object
-const mapExercises = async (user) => {
-
-    const globalExercises = await Exercise.findAll({ where: { user_id: null } });
-    const userExercises = await user.getExercises();
-
-    const map = new Map();
-
-    for (const exercise of globalExercises) {
-        map.set(exercise.id, exercise);
-    }
-
-    for (const exercise of userExercises) {
-        map.set(exercise.id, exercise);
-    }    
-
-    return map;
-};
-
 export const addWorkout = async (req, res, next) => {
     try {
 
         const user = req.user;
+        const workoutData = req.body;
 
-        if (!req.body) {
-            await user.createWorkout();
+        const templates = await user.getWorkoutTemplates();
+        const templatesIdsSet = new Set(templates.map((t) => t.id));
 
-            return res.status(200).json({ message: 'Successfully added workout' });
+        const userExercises = await user.getExercises();
+        const globalExercises = await Exercise.findAll({ where: { user_id: null } });
+
+        const exercisesIdsSet = new Set(userExercises.map((uE) => uE.id));
+
+        for (const exercise of globalExercises) {
+            exercisesIdsSet.add(exercise.id);
         }
         
-        const workoutData = {};
+        const newWorkout = {
+            workout_template_id: null,
+            duration: null,
+            date: null,
+            exercises: null,
+        };
 
-        if (req.body.template) {
+        const errors = [];
 
-            const template = (await user.getWorkoutTemplates({ where: { id: req.body.template } }))[0];
+        validateTemplate(newWorkout, workoutData, errors, templatesIdsSet);
 
-            if (template) {
-                workoutData.workout_template_id = template.id;
-            }
-        }
-        
-        const duration = req.body.duration;
-        if (duration && duration >= 0 && duration <= 1000000) {
-            workoutData.duration = Math.round(duration);
-        }
+        validateDuration(newWorkout, workoutData, errors);
 
-        const date = new Date(req.body.date);
-        if (date != 'Invalid Date') {
-            workoutData.date = date;
-        }
+        validateDate(newWorkout, workoutData, errors);
 
-        const workout = await user.createWorkout(workoutData);
+        validateExercises(newWorkout, workoutData, errors, exercisesIdsSet);
 
-        const exercises = req.body.exercises;
-        if (exercises) {
+        if (errors.length > 0) {
+            console.log('Failed to add workout');
+            const err = new Error('Failed to add workout');
+            err.status = 422;
+            err.details = errors;
+            return next(err);
+        }     
 
-            // first map user exercises and global exercises
-            const map = await mapExercises(user);
+        const workout = await user.createWorkout(newWorkout);
 
-            // iterate through given exercises 
-            let exercisePosition = 0;
-            for (const exercise of exercises) {
+        const exercises = newWorkout.exercises;
 
-                if (!exercise.id) {
-                    continue;
-                }
-                const currId = exercise.id;
-
-                // check if exercise exists
-                if (!map.has(currId)) {
-                    continue;
-                }
-                
-                const currExercise = map.get(currId);
-
-                const currWorkoutExercise = await WorkoutExercise.create({
-                    workout_id: workout.id, 
-                    exercise_id: currExercise.id, 
-                    position: exercisePosition
-                });
-                exercisePosition++;
-
-                if (!exercise.sets) {
-                    continue;
-                }
-
-                const formatedSets = [];
-                let setPosition = 0;
-                for (const set of exercise.sets) {
-                    if (!set.reps || !set.weight || set.reps <= 0 || set.weight < 0) {
-                        continue;
-                    }
-                    formatedSets.push({
-                        workout_exercise_id: currWorkoutExercise.id, 
-                        reps: set.reps, 
-                        weight: set.weight, 
-                        position: setPosition 
-                    });
-                    setPosition++;
-                }
-
-                await Set.bulkCreate(formatedSets);
-            }
+        for (let i = 0; i < exercises.length; i++) {
+            await workout.addExercise(exercises[i].id, i, exercises[i].sets);
         }
 
-        return res.status(200).json({ id: workout.id, message: 'Successfully added workout' });
+        console.log('Successfully added workout');
+        return res.status(201).json({ id: workout.id, message: 'Successfully added workout' });
     }
     catch (error) {
         console.log(`Error while trying to add new workout: ${error}`);
@@ -173,94 +125,67 @@ export const editWorkout = async (req, res, next) => {
         const workoutId = req.params.id;
         const user = req.user;
 
-        const workout = (await user.getWorkouts({ where: {id: workoutId } }))[0];
+        const workout = (await user.getWorkouts({ where: { id: workoutId } }))[0];
 
         if (!workout) {
-            console.log('Workout does not exist');
-            const err = new Error('Workout does not exist');
+            console.log('Workout not found');
+            const err = new Error('Workout not found');
             err.status = 404;
             return next(err);
-        }        
-
-        const data = req.body;
-
-        if (data.template) {
-
-            const template = (await user.getWorkoutTemplates({ where: { id: req.body.template } }))[0];
-
-            if (template) {
-                workout.workout_template_id = template.id;
-            }
-        }        
-
-        const duration = data.duration;
-        if (duration && duration >= 0 && duration <= 1000000) {
-            workout.duration = Math.round(duration);
         }
 
-        const date = new Date(data.date);
-        if (date != 'Invalid Date') {
-            workout.date = date;
-        }        
+        const workoutData = req.body;
 
-        const exercises = data.exercises;
-        if (exercises) {
+        const templates = await user.getWorkoutTemplates();
+        const templatesIdsSet = new Set(templates.map((t) => t.id));
 
-            // clear previous exercises
-            await workout.setExercises([]);
+        const userExercises = await user.getExercises();
+        const globalExercises = await Exercise.findAll({ where: { user_id: null } });
 
-            // first map user exercises and global exercises
-            const map = await mapExercises(user);
+        const exercisesIdsSet = new Set(userExercises.map((uE) => uE.id));
 
-            // iterate through given exercises 
-            let exercisePosition = 0;
-            for (const exercise of exercises) {
+        for (const exercise of globalExercises) {
+            exercisesIdsSet.add(exercise.id);
+        }
+        
+        const newWorkout = {
+            workout_template_id: null,
+            duration: null,
+            date: null,
+            exercises: null,
+        };
 
-                if (!exercise.id) {
-                    continue;
-                }
-                const currId = exercise.id;
+        const errors = [];
 
-                // check if exercise exists
-                if (!map.has(currId)) {
-                    continue;
-                }
-                
-                const currExercise = map.get(currId);
+        validateTemplate(newWorkout, workoutData, errors, templatesIdsSet);
 
-                const currWorkoutExercise = await WorkoutExercise.create({
-                    workout_id: workout.id, 
-                    exercise_id: currExercise.id, 
-                    position: exercisePosition
-                });
-                exercisePosition++;
+        validateDuration(newWorkout, workoutData, errors);
 
-                if (!exercise.sets) {
-                    continue;
-                }
+        validateDate(newWorkout, workoutData, errors);
 
-                const formatedSets = [];
-                let setPosition = 0;
-                for (const set of exercise.sets) {
-                    if (!set.reps || !set.weight || set.reps <= 0 || set.weight < 0) {
-                        continue;
-                    }
-                    formatedSets.push({
-                        workout_exercise_id: currWorkoutExercise.id, 
-                        reps: set.reps, 
-                        weight: set.weight, 
-                        position: setPosition 
-                    });
-                    setPosition++;
-                }
+        validateExercises(newWorkout, workoutData, errors, exercisesIdsSet);
 
-                await Set.bulkCreate(formatedSets);
-            }
-        }        
+        if (errors.length > 0) {
+            console.log('Failed to edit workout');
+            const err = new Error('Failed to edit workout');
+            err.status = 422;
+            err.details = errors;
+            return next(err);
+        }     
 
-        await workout.save();
+        await workout.update(newWorkout);
 
-        return res.status(200).json({ message: 'Successfully edited workout' });
+        // clear previous exercises
+        await workout.setExercises([]);
+
+        const exercises = newWorkout.exercises;
+
+        for (let i = 0; i < exercises.length; i++) {
+            await workout.addExercise(exercises[i].id, i, exercises[i].sets);
+        }
+
+        console.log('Successfully changed workout');
+        return res.status(200).json({ message: 'Successfully changed workout' });
     }
     catch (error) {
         console.log(`Error while trying to edit workout: ${error}`);
