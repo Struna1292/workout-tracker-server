@@ -1,5 +1,6 @@
 import db from '../db.js';
 import { DataTypes } from 'sequelize';
+import WorkoutTemplateExercise from './WorkoutTemplateExercise.js';
 
 const WorkoutTemplate = db.define(
     'WorkoutTemplate', {
@@ -22,5 +23,16 @@ const WorkoutTemplate = db.define(
         timestamps: false,
     } 
 );
+
+// default addExercise functions works on findOrCreate
+// instead of adding same exercise with different position 
+// it will override position
+WorkoutTemplate.prototype.addExercise = async function (exerciseId, position) {
+    return await WorkoutTemplateExercise.create({
+        workout_template_id: this.id,
+        exercise_id: exerciseId,
+        position: position
+    });
+}
 
 export default WorkoutTemplate;
