@@ -5,6 +5,10 @@ import sendEmail from '../utils/sendEmail.js';
 import generateRandomDigits from '../utils/generateRandomDigits.js';
 import ConfirmationCode from '../models/ConfirmationCode.js';
 import { OAuth2Client } from 'google-auth-library';
+import { 
+    validateUsername,
+    validatePassword,
+} from '../validations/userValidations.js';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION;
@@ -81,6 +85,19 @@ export const register = async (req, res, next) => {
         if (user) {
             const err = new Error('User already exists');
             err.status = 400;
+            return next(err);
+        }
+
+        const errors = [];
+
+        validateUsername(username, errors);
+        validatePassword(password, errors);
+
+        if (errors.length > 0) {
+            console.log('Failed to register');
+            const err = new Error('Failed to register');
+            err.status = 422;
+            err.details = errors;
             return next(err);
         }
         
@@ -630,10 +647,15 @@ export const resetPassword = async (req, res, next) => {
 
         const { password } = req.body;
 
-        if (!password) {
-            console.log('No password provided');
-            const err = new Error('No password provided');
-            err.status = 400;
+        const errors = [];
+
+        validatePassword(password, errors);
+
+        if (errors.length > 0) {
+            console.log('Failed to change password');
+            const err = new Error('Failed to change password');
+            err.status = 422;
+            err.details = errors;
             return next(err);
         }
 
