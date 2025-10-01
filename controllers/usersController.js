@@ -1,9 +1,11 @@
 import bcrypt from 'bcrypt';
+import { validatePassword } from '../validations/userValidations.js';
 
 export const changePassword = async (req, res, next) => {
     try {
 
         const { currentPassword, newPassword } = req.body;
+        const user = req.user;
 
         if (!currentPassword) {
             console.log('No current password provided');
@@ -19,10 +21,18 @@ export const changePassword = async (req, res, next) => {
             return next(err);
         }
 
-        // TO DO: validate new password
+        const errors = [];
 
-        const user = req.user;
+        validatePassword(newPassword, errors);
 
+        if (errors.length > 0) {
+            console.log('Failed to change password');
+            const err = new Error('Failed to change password');
+            err.status = 422;
+            err.details = errors;
+            return next(err);
+        }
+        
         if (!(await bcrypt.compare(currentPassword, user.password))) {
             console.log('Wrong password');
             const err = new Error('Wrong password');
