@@ -8,7 +8,18 @@ export const getUserExercises = async (req, res, next) => {
 
         const user = req.user;
 
-        const exercises = await user.getExercises();
+        let offset = parseInt(req.query.offset) || 0;
+        let limit = parseInt(req.query.limit) || 20;
+
+        if (offset < 0) {
+            offset = 0;
+        }
+
+        if (limit < 0 || limit > 20) {
+            limit = 20;
+        }
+
+        const exercises = await user.getExercises({ offset: offset, limit: limit });
 
         const exercisesData = [];
         for (const exercise of exercises) {
@@ -18,8 +29,15 @@ export const getUserExercises = async (req, res, next) => {
                 id: exercise.id,
                 name: exercise.name,
                 description: exercise.description,
-                muscleGroups: muscleGroups.map((mG) => (mG.name))
+                muscleGroups: muscleGroups.map((mG) => (mG.id))
             });
+        }
+
+        if (exercisesData.length == 0) {
+            console.log(`No exercises found with offset: ${offset}, limit: ${limit}`);
+            const err = new Error(`No exercises found with offset: ${offset}, limit: ${limit}`);
+            err.status = 404;
+            return next(err);
         }
 
         return res.status(200).json(exercisesData);
@@ -35,7 +53,18 @@ export const getUserExercises = async (req, res, next) => {
 export const getGlobalExercises = async (req, res, next) => {
     try {
 
-        const exercises = await Exercise.findAll({ where: { user_id: null } });
+        let offset = parseInt(req.query.offset) || 0;
+        let limit = parseInt(req.query.limit) || 20;
+
+        if (offset < 0) {
+            offset = 0;
+        }
+
+        if (limit < 0 || limit > 20) {
+            limit = 20;
+        }
+
+        const exercises = await Exercise.findAll({ where: { user_id: null }, offset: offset, limit: limit });
 
         const exercisesData = [];
         for (const exercise of exercises) {
@@ -45,9 +74,16 @@ export const getGlobalExercises = async (req, res, next) => {
                 id: exercise.id,
                 name: exercise.name,
                 description: exercise.description,
-                muscleGroups: muscleGroups.map((mG) => (mG.name))
+                muscleGroups: muscleGroups.map((mG) => (mG.id))
             });
-        }        
+        }
+
+        if (exercisesData.length == 0) {
+            console.log(`No exercises found with offset: ${offset}, limit: ${limit}`);
+            const err = new Error(`No exercises found with offset: ${offset}, limit: ${limit}`);
+            err.status = 404;
+            return next(err);
+        }
 
         return res.status(200).json(exercisesData);
     }

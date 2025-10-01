@@ -4,13 +4,25 @@ export const userMeasurements = async (req, res, next) => {
     try {
 
         const user = req.user;
+
+        let offset = parseInt(req.query.offset) || 0;
+        let limit = parseInt(req.query.limit) || 20;
+
+        if (offset < 0) {
+            offset = 0;
+        }
+
+        if (limit < 0 || limit > 20) {
+            limit = 20;
+        }
         
-        const measurements = await user.getBodyMeasurements();
+        const measurements = await user.getBodyMeasurements({ offset: offset, limit: limit });
 
         if (measurements.length == 0) {
-            const err = new Error('User has no measurements');
+            console.log(`No measurements found with offset: ${offset}, limit: ${limit}`);
+            const err = new Error(`No measurements found with offset: ${offset}, limit: ${limit}`);
             err.status = 404;
-            return next(err); 
+            return next(err);
         }
 
         return res.status(200).json(measurements);
