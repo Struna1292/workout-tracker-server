@@ -1,5 +1,4 @@
 import Exercise from '../models/Exercise.js';
-import WorkoutExercise from '../models/WorkoutExercise.js';
 import { 
     validateTemplate, 
     validateDuration, 
@@ -9,11 +8,22 @@ import {
 
 export const getUserWorkouts = async (req, res, next) => {
     try {
-        const user = req.user;
+        const user = req.user; 
+
+        let offset = parseInt(req.query.offset) || 0;
+        let limit = parseInt(req.query.limit) || 5;
+
+        if (offset < 0) {
+            offset = 0;
+        }
+
+        if (limit < 0 || limit > 5) {
+            limit = 5;
+        }        
 
         const workoutsData = [];
 
-        const workouts = await user.getWorkouts();
+        const workouts = await user.getWorkouts({ offset: offset, limit: limit });
         for (const workout of workouts) {
 
             const template = await workout.getTemplate();
