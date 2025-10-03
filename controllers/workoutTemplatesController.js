@@ -1,14 +1,27 @@
 import WorkoutTemplate from '../models/WorkoutTemplate.js';
 import Exercise from '../models/Exercise.js';
-import WorkoutTemplateExercise from '../models/WorkoutTemplateExercise.js';
 import { Op } from 'sequelize';
-import { validateName, validateExercises } from '../validations/templateValidations.js';
+import { 
+    validateName, 
+    validateExercises,
+} from '../validations/templateValidations.js';
 
 export const userWorkoutTemplates = async (req, res, next) => {
     try {
         const user = req.user;
 
-        const templates = await user.getWorkoutTemplates();
+        let offset = parseInt(req.query.offset) || 0;
+        let limit = parseInt(req.query.limit) || 20;
+
+        if (offset < 0) {
+            offset = 0;
+        }
+
+        if (limit < 0 || limit > 20) {
+            limit = 20;
+        }
+
+        const templates = await user.getWorkoutTemplates({ offset: offset, limit: limit });
         const templatesData = [];
 
         for (const template of templates) {
@@ -16,7 +29,7 @@ export const userWorkoutTemplates = async (req, res, next) => {
             const exercisesData = new Array(exercises.length);
 
             for (const exercise of exercises) {
-                exercisesData[exercise.WorkoutTemplateExercise.position] = exercise.name;
+                exercisesData[exercise.WorkoutTemplateExercise.position] = exercise.id;
             }
 
             templatesData.push({
@@ -26,7 +39,7 @@ export const userWorkoutTemplates = async (req, res, next) => {
             });
         }
 
-        return res.status(200).json(templates);
+        return res.status(200).json(templatesData);
     }
     catch (error) {
         console.log(`Error while trying to get user templates: ${error}`);
