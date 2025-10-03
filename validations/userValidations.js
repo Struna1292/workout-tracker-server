@@ -26,6 +26,11 @@ export const validatePassword = (password, errors) => {
         return;
     }
 
+    if (password.length < 8) {
+        errors.push('Password needs to be atleast 8 characters long');
+        return;        
+    }
+
     let digit = false;
     let lowerCase = false;
     let upperCase = false;
