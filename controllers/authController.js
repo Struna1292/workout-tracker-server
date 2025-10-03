@@ -9,6 +9,7 @@ import {
     validateUsername,
     validatePassword,
 } from '../validations/userValidations.js';
+import sequelize from '../db.js';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRATION = process.env.ACCESS_TOKEN_EXPIRATION;
@@ -81,7 +82,11 @@ export const register = async (req, res, next) => {
         const { username, password } = req.body;
 
         // check if user already exists
-        const user = await User.findOne({ where: { username: username } });
+        const user = await User.findOne({ where: sequelize.where(
+            sequelize.fn('LOWER', sequelize.col('username')),
+            username.toLowerCase()
+        )});
+
         if (user) {
             const err = new Error('User already exists');
             err.status = 400;
