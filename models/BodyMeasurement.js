@@ -48,10 +48,20 @@ const BodyMeasurement = db.define(
         date: {
             type: DataTypes.DATE,
             allowNull: false,
-        }
+        },
+        updated_at: {
+            type: DataTypes.DATE(3),
+            allowNull: false,
+        },
+        deleted_at: {
+            type: DataTypes.DATE(3),
+            allowNull: true,
+        },
     }, {
         tableName: 'body_measurements',
-        timestamps: false,
+        timestamps: true,
+        createdAt: false,
+        updatedAt: 'updated_at',
     }
 );
 

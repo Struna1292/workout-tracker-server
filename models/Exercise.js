@@ -20,10 +20,20 @@ const Exercise = db.define(
         user_id: {
             type: DataTypes.INTEGER,
             allowNull: true,
-        }
+        },
+        updated_at: {
+            type: DataTypes.DATE(3),
+            allowNull: false,
+        },
+        deleted_at: {
+            type: DataTypes.DATE(3),
+            allowNull: true,
+        },
     }, {
         tableName: 'exercises',
-        timestamps: false,
+        timestamps: true,
+        createdAt: false,
+        updatedAt: 'updated_at',
     } 
 );
 

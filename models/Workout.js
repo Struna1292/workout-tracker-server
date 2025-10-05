@@ -26,9 +26,19 @@ const Workout = db.define(
             type: DataTypes.DATE,
             allowNull: false,
         },
+        updated_at: {
+            type: DataTypes.DATE(3),
+            allowNull: false,
+        },
+        deleted_at: {
+            type: DataTypes.DATE(3),
+            allowNull: true,
+        },
     }, {
         tableName: 'workouts',
-        timestamps: false,
+        timestamps: true,
+        createdAt: false,
+        updatedAt: 'updated_at',
     } 
 );
 

@@ -33,7 +33,11 @@ const User = db.define(
         refresh_token: {
             type: DataTypes.STRING,
             allowNull: true,            
-        }
+        },
+        last_sync: {
+            type: DataTypes.DATE(3),
+            allowNull: false,
+        },
     }, {
         tableName: 'users',
         timestamps: false,
