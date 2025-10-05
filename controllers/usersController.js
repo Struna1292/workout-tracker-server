@@ -214,3 +214,17 @@ export const changeUsername = async (req, res, next) => {
         return next(err);
     }
 };
+
+export const getLastSync = async (req, res, next) => {
+    try {
+        const lastSync = req.user.last_sync;
+
+        return res.status(200).json({ last_sync: lastSync });
+    }
+    catch (error) {
+        console.log(`Error while trying to get user last sync: ${error}`);
+        const err = new Error('Internal server error while trying to get uset last sync');
+        err.status = 500;
+        return next(err);
+    }
+};

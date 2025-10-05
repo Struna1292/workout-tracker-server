@@ -7,6 +7,7 @@ import {
     removeEmail,
     addEmail,
     changeUsername,
+    getLastSync,
 } from '../controllers/usersController.js';
 
 const router = express.Router();
@@ -22,5 +23,8 @@ router.patch('/me/email', [checkBody, authToken, loadUser], addEmail);
 
 // change username
 router.patch('/me/username', [checkBody, authToken, loadUser], changeUsername);
+
+// get user last sync from server
+router.get('/me/last-sync', [authToken, loadUser], getLastSync);
 
 export default router;
