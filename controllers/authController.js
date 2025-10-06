@@ -566,7 +566,10 @@ export const verifyResetCode = async (req, res, next) => {
             return next(err);
         }
 
-        const user = await User.findOne({ where: { username: username } });
+        const user = await User.findOne({ where: sequelize.where(
+            sequelize.fn('LOWER', sequelize.col('username')),
+            username.toLowerCase()
+        )});
 
         if (!user) {
             console.log('User does not exist');
