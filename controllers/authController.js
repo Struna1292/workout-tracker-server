@@ -299,6 +299,7 @@ export const loginWithGoogle = async (req, res, next) => {
                 google_id: userId,
                 username: '',
                 password: '',
+                last_sync: new Date()
             });
         }
 
