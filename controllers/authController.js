@@ -25,8 +25,19 @@ export const login = async (req, res, next) => {
     try {
         const { username, password } = req.body;
 
+        if (!username || !password || typeof username != 'string' || typeof password != 'string') {
+            console.log('Invalid format or missing credentials');
+            const err = new Error('Invalid format or missing credentials');
+            err.status = 422;
+            return next(err);
+        }
+
         // check if user exists
-        const user = await User.findOne({ where: { username: username } });
+        const user = await User.findOne({ where: sequelize.where(
+            sequelize.fn('LOWER', sequelize.col('username')),
+            username.toLowerCase()
+        )});
+
         if (!user) {
             const err = new Error('Invalid credentials');
             err.status = 401;
