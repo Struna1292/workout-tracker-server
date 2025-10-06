@@ -95,29 +95,54 @@ export const register = async (req, res, next) => {
         }
 
         // check if user already exists
-        const user = await User.findOne({ where: sequelize.where(
+        const userExists = await User.findOne({ where: sequelize.where(
             sequelize.fn('LOWER', sequelize.col('username')),
             username.toLowerCase()
         )});
 
-        if (user) {
+        if (userExists) {
             const err = new Error('User already exists');
             err.status = 400;
             return next(err);
         }
         
         // hash password
-        const saltRounds = 10;
-        const salt = await bcrypt.genSalt(saltRounds);
-        const hash = await bcrypt.hash(password, salt);
+        let saltRounds = 10;
+        let salt = await bcrypt.genSalt(saltRounds);
+        let hash = await bcrypt.hash(password, salt);
 
-        const newUser = await User.create({ 
+        const user = await User.create({ 
             username: username,
             password: hash,
             last_sync: new Date() 
         });
 
-        return res.status(201).json({ message: 'Successfully registered', last_sync: newUser.last_sync });
+        const accessToken = jwt.sign({
+            id: user.id,
+            username: user.username,
+        }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRATION});
+
+        const refreshToken = jwt.sign({
+            id: user.id,
+            username: user.username,
+        }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRATION});
+
+        // hash refresh token
+        saltRounds = 10;
+        salt = await bcrypt.genSalt(saltRounds);
+        hash = await bcrypt.hash(refreshToken, salt);
+        
+        user.refresh_token = hash;
+        await user.save();
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days in miliseconds
+        });        
+
+        return res.status(201).json({ message: 'Successfully registered', last_sync: user.last_sync, token: accessToken });
     }
     catch (error) {
         console.log(`Error while creating user account: ${error}`);
