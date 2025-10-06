@@ -1,4 +1,5 @@
 import { validateMeasurement } from '../validations/bodyMeasurementValidations.js';
+import { Op } from 'sequelize';
 
 export const userMeasurements = async (req, res, next) => {
     try {
@@ -15,17 +16,82 @@ export const userMeasurements = async (req, res, next) => {
         if (limit < 0 || limit > 20) {
             limit = 20;
         }
-        
-        const measurements = await user.getBodyMeasurements({ offset: offset, limit: limit });
+
+        let startDate = req.startDate;
+        let endDate = req.endDate;
+
+        let measurements;
+        // startDate provided
+        if (startDate) {
+            measurements = await user.getBodyMeasurements({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.gt]: startDate
+                    },
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
+            });
+        }
+        else {
+            measurements = await user.getBodyMeasurements({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
+            });
+        }
 
         if (measurements.length == 0) {
-            console.log(`No measurements found with offset: ${offset}, limit: ${limit}`);
-            const err = new Error(`No measurements found with offset: ${offset}, limit: ${limit}`);
+            console.log(`No measurements found with offset: ${offset}, limit: ${limit}, startDate: ${startDate || 'from start'}, endDate: ${endDate}`);
+            const err = new Error(`No measurements found with offset: ${offset}, limit: ${limit}, startDate: ${startDate || 'from start'}, endDate: ${endDate}`);
             err.status = 404;
             return next(err);
         }
 
-        return res.status(200).json(measurements);
+        const respObj = {
+            has_more: false,
+            data: []
+        };
+
+        if (measurements.length > limit) {
+            respObj.has_more = true;
+            // pop last one that was loaded to check if there is more
+            measurements.pop();
+        }
+
+        // format output data
+        for (const measurement of measurements) {
+            if (measurement.deleted_at != null) {
+                respObj.data.push({
+                    id: measurement.id,
+                    deleted: true,
+                });
+            }
+            else {
+                respObj.data.push({
+                    id: measurement.id,
+                    deleted: false,
+                    weight: measurement.weight,
+                    arm: measurement.arm,
+                    forearm: measurement.forearm,
+                    chest: measurement.chest,
+                    waist: measurement.waist,
+                    hips: measurement.hips,
+                    thigh: measurement.thigh,
+                    calf: measurement.calf,
+                    date: measurement.date,
+                });
+            }
+        }
+
+        return res.status(200).json(respObj);
     }
     catch (error) {
         console.log(`Error while loading user measurements from database: ${error}`);
@@ -67,8 +133,11 @@ export const addMeasurement = async (req, res, next) => {
 
         const measurement = await user.createBodyMeasurement(newMeasurement);
 
+        user.last_sync = measurement.last_sync;
+        await user.save();
+
         console.log('Successfully added measurement');
-        return res.status(201).json({ id: measurement.id, message: 'Successfully added measurement' });
+        return res.status(201).json({ id: measurement.id, message: 'Successfully added measurement', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to add new measurement: ${error}`);
@@ -85,7 +154,7 @@ export const updateMeasurement = async (req, res, next) => {
         const user = req.user;
 
         const measurement = (await user.getBodyMeasurements({
-            where: { id: measurementId },
+            where: { id: measurementId, deleted_at: null },
             limit: 1
         }))[0];        
         
@@ -122,8 +191,11 @@ export const updateMeasurement = async (req, res, next) => {
 
         await measurement.update(newMeasurement);
 
+        user.last_sync = measurement.updated_at;
+        await user.save();        
+
         console.log('Successfully updated measurement');
-        return res.status(200).json({ message: 'Successfully updated measurement' });
+        return res.status(200).json({ message: 'Successfully updated measurement', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to update measurement: ${error}`);
@@ -140,7 +212,7 @@ export const removeMeasurement = async (req, res, next) => {
         const user = req.user;
         
         const measurement = (await user.getBodyMeasurements({
-            where: { id: measurementId },
+            where: { id: measurementId, deleted_at: null },
             limit: 1
         }))[0];
 
@@ -151,10 +223,13 @@ export const removeMeasurement = async (req, res, next) => {
             return next(err);            
         }
 
-        await measurement.destroy();
+        await measurement.update({ deleted_at: new Date() });
+
+        user.last_sync = measurement.deleted_at;
+        await user.save();
 
         console.log('Successfully removed measurement');
-        return res.status(204).json({ message: 'Successfully removed measurement' });
+        return res.status(200).json({ message: 'Successfully removed measurement', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to remove measurement by id: ${error}`);

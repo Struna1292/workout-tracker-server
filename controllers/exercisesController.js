@@ -1,7 +1,11 @@
 import Exercise from '../models/Exercise.js';
 import MuscleGroups from '../models/MuscleGroup.js';
 import { Op } from 'sequelize';
-import { validateName, validateDescription, validateMuscleGroups } from '../validations/exerciseValidations.js';
+import { 
+    validateName, 
+    validateDescription, 
+    validateMuscleGroups 
+} from '../validations/exerciseValidations.js';
 
 export const getUserExercises = async (req, res, next) => {
     try {
@@ -19,28 +23,76 @@ export const getUserExercises = async (req, res, next) => {
             limit = 20;
         }
 
-        const exercises = await user.getExercises({ offset: offset, limit: limit });
+        let startDate = req.startDate;
+        let endDate = req.endDate;
 
-        const exercisesData = [];
-        for (const exercise of exercises) {
-            const muscleGroups = await exercise.getMuscleGroups();
-
-            exercisesData.push({
-                id: exercise.id,
-                name: exercise.name,
-                description: exercise.description,
-                muscleGroups: muscleGroups.map((mG) => (mG.id))
+        let exercises;
+        // startDate provided
+        if (startDate) {
+            exercises = await user.getExercises({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.gt]: startDate
+                    },
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
+            });
+        }
+        else {
+            exercises = await user.getExercises({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
             });
         }
 
-        if (exercisesData.length == 0) {
-            console.log(`No exercises found with offset: ${offset}, limit: ${limit}`);
-            const err = new Error(`No exercises found with offset: ${offset}, limit: ${limit}`);
+        if (exercises.length == 0) {
+            console.log(`No exercises found with offset: ${offset}, limit: ${limit}, startDate: ${startDate || 'from start'}, endDate: ${endDate}`);
+            const err = new Error(`No exercises found with offset: ${offset}, limit: ${limit}, startDate: ${startDate || 'from start'}, endDate: ${endDate}`);
             err.status = 404;
             return next(err);
         }
 
-        return res.status(200).json(exercisesData);
+        const respObj = {
+            has_more: false,
+            data: []
+        };
+
+        if (exercises.length > limit) {
+            respObj.has_more = true;
+            // pop last one that was loaded to check if there is more
+            exercises.pop();
+        }
+
+        // format output data
+        for (const exercise of exercises) {
+            const muscleGroups = await exercise.getMuscleGroups();
+
+            if (exercise.deleted_at != null) {
+                respObj.data.push({
+                    id: exercise.id,
+                    deleted: true,
+                });
+            }
+            else {
+                respObj.data.push({
+                    id: exercise.id,
+                    name: exercise.name,
+                    description: exercise.description,
+                    muscleGroups: muscleGroups.map((mG) => (mG.id))
+                });
+            }
+        }        
+
+        return res.status(200).json(respObj);
     }
     catch (error) {
         console.log(`Error while trying to get user exercises: ${error}`);
@@ -147,8 +199,11 @@ export const addUserExercise = async (req, res, next) => {
 
         const exercise = await user.createExercise(newExercise);
         await exercise.setMuscleGroups(newExercise.muscleGroups);
+
+        user.last_sync = exercise.last_sync;
+        await user.save();        
         
-        return res.status(201).json({ id: exercise.id, message: 'Successfully added exercise' });
+        return res.status(201).json({ id: exercise.id, message: 'Successfully added exercise', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to add new exercise: ${error}`);
@@ -164,7 +219,7 @@ export const editUserExercise = async (req, res, next) => {
         const user = req.user;
 
         // user exercise to edit
-        const exercise = (await user.getExercises({ where: { id: exerciseId }}))[0];
+        const exercise = (await user.getExercises({ where: { id: exerciseId, deleted_at: null }}))[0];
 
         if (!exercise) {
             console.log('Exercise to edit not found');
@@ -208,7 +263,10 @@ export const editUserExercise = async (req, res, next) => {
         await exercise.update(newExercise);
         await exercise.setMuscleGroups(newExercise.muscleGroups);
 
-        return res.status(200).json({ message: 'Successfully edited exercise' });
+        user.last_sync = measurement.updated_at;
+        await user.save();
+
+        return res.status(200).json({ message: 'Successfully edited exercise', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to edit user exercise: ${error}`);
@@ -224,7 +282,7 @@ export const removeUserExercise = async (req, res, next) => {
         const user = req.user;
         const exerciseId = req.params.id;
 
-        const exercise = (await user.getExercises({ where: { id: exerciseId }}))[0];
+        const exercise = (await user.getExercises({ where: { id: exerciseId, deleted_at: null }}))[0];
 
         if (!exercise) {
             console.log('Exercise to remove not found');
@@ -233,9 +291,12 @@ export const removeUserExercise = async (req, res, next) => {
             return next(err);
         }
 
-        await exercise.destroy();
+        await exercise.update({ deleted_at: new Date() });
 
-        return res.status(200).json({ message: "Successfully removed user exercise "});
+        user.last_sync = exercise.deleted_at;
+        await user.save();
+
+        return res.status(200).json({ message: 'Successfully removed user exercise', last_sync: user.last_sync});
     }
     catch (error) {
         console.log(`Error while trying to remove user exercise: ${error}`);

@@ -1,4 +1,3 @@
-import WorkoutTemplate from '../models/WorkoutTemplate.js';
 import Exercise from '../models/Exercise.js';
 import { Op } from 'sequelize';
 import { 
@@ -21,10 +20,58 @@ export const userWorkoutTemplates = async (req, res, next) => {
             limit = 20;
         }
 
-        const templates = await user.getWorkoutTemplates({ offset: offset, limit: limit });
-        const templatesData = [];
+        let startDate = req.startDate;
+        let endDate = req.endDate;
+
+        let templates;
+        // startDate provided
+        if (startDate) {
+            measurements = await user.getWorkoutTemplates({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.gt]: startDate
+                    },
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
+            });
+        }
+        else {
+            measurements = await user.getWorkoutTemplates({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
+            });
+        }
+
+        const respObj = {
+            has_more: false,
+            data: []
+        };
+
+        if (templates.length > limit) {
+            respObj.has_more = true;
+            // pop last one that was loaded to check if there is more
+            templates.pop();
+        }
 
         for (const template of templates) {
+            if (template.deleted_at != null) {
+                respObj.data.push({
+                    id: template.id,
+                    deleted: true,
+                });
+
+                continue;
+            }            
+
             const exercises = await template.getExercises();
             const exercisesData = new Array(exercises.length);
 
@@ -32,14 +79,15 @@ export const userWorkoutTemplates = async (req, res, next) => {
                 exercisesData[exercise.WorkoutTemplateExercise.position] = exercise.id;
             }
 
-            templatesData.push({
+            respObj.push({
                 id: template.id,
+                deleted: false,
                 name: template.name,
                 exercises: exercisesData,
             });
         }
 
-        return res.status(200).json(templatesData);
+        return res.status(200).json(respObj);
     }
     catch (error) {
         console.log(`Error while trying to get user templates: ${error}`);
@@ -124,8 +172,11 @@ export const addWorkoutTemplate = async (req, res, next) => {
             await template.addExercise(exercises[i], i);
         }
 
+        user.last_sync = template.last_sync;
+        await user.save();
+
         console.log('Successfully added workout template');
-        return res.status(201).json({ id: template.id, message: 'Successfully added workout template' });
+        return res.status(201).json({ id: template.id, message: 'Successfully added workout template', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while adding new workout template: ${error}`);
@@ -141,7 +192,7 @@ export const updateWorkoutTemplate = async (req, res, next) => {
         const user = req.user;
         const templateId = req.params.id;
 
-        const template = (await user.getWorkoutTemplates({ where: { id: templateId } }))[0];
+        const template = (await user.getWorkoutTemplates({ where: { id: templateId, deleted_at: null } }))[0];
 
         if (!template) {
             console.log('Failed to edit template, template not found');
@@ -195,8 +246,11 @@ export const updateWorkoutTemplate = async (req, res, next) => {
             await template.addExercise(exercises[i], i);
         }
 
+        user.last_sync = template.updated_at;
+        await user.save();           
+
         console.log('Successfully edited workout template');
-        return res.status(200).json({ message: 'Successfully edited workout template' });
+        return res.status(200).json({ message: 'Successfully edited workout template', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to udpate template: ${error}`);
@@ -210,18 +264,24 @@ export const removeWorkoutTemplate = async (req, res, next) => {
     try {
         const templateId = req.params.id;
 
-        const template = await WorkoutTemplate.findByPk(templateId);
+        const template = (await user.getWorkoutTemplates({
+            where: { id: templateId, deleted_at: null },
+            limit: 1
+        }))[0];
 
-        if (!template || template.user_id != req.user.id) {
+        if (!template) {
             console.log('Failed to remove user template, template not found');
             const err = new Error('Failed to remove user template, template not found');
             err.status = 404;
             return next(err);
         }
 
-        await template.destroy();
+        await template.update({ deleted_at: new Date() });
 
-        return res.status(200).json({ message: 'Successfully removed user workout template' });
+        user.last_sync = template.deleted_at;
+        await user.save();
+
+        return res.status(200).json({ message: 'Successfully removed user workout template', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to remove workout template: ${error}`);

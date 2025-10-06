@@ -19,17 +19,73 @@ export const getUserWorkouts = async (req, res, next) => {
 
         if (limit < 0 || limit > 5) {
             limit = 5;
-        }        
+        }
 
-        const workoutsData = [];
+        let startDate = req.startDate;
+        let endDate = req.endDate;
 
-        const workouts = await user.getWorkouts({ offset: offset, limit: limit });
+        let workouts;
+        // startDate provided
+        if (startDate) {
+            workouts = await user.getWorkouts({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.gt]: startDate
+                    },
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
+            });
+        }
+        else {
+            workouts = await user.getWorkouts({
+                offset: offset, 
+                limit: limit + 1,
+                where: {
+                    updated_at: {
+                        [Op.lte]: endDate
+                    },
+                },
+            });
+        }
+
+        if (workouts.length == 0) {
+            console.log(`No workouts found with offset: ${offset}, limit: ${limit}, startDate: ${startDate || 'from start'}, endDate: ${endDate}`);
+            const err = new Error(`No workouts found with offset: ${offset}, limit: ${limit}, startDate: ${startDate || 'from start'}, endDate: ${endDate}`);
+            err.status = 404;
+            return next(err);
+        }
+
+        const respObj = {
+            has_more: false,
+            data: []
+        };
+
+        if (workouts.length > limit) {
+            respObj.has_more = true;
+            // pop last one that was loaded to check if there is more
+            workouts.pop();
+        }
+
         for (const workout of workouts) {
+
+            if (workout.deleted_at != null) {
+                respObj.data.push({
+                    id: workout.id,
+                    deleted: true,
+                });
+
+                continue;
+            }
 
             const template = await workout.getTemplate();
 
             const currWorkout = {
                 id: workout.id,
+                deleted: false,
                 template: template ? template.name : null,
                 duration: workout.duration,
                 date: workout.date,
@@ -54,10 +110,10 @@ export const getUserWorkouts = async (req, res, next) => {
                 currWorkout.exercises.push(currExercise);
             }
 
-            workoutsData.push(currWorkout);
+            respObj.push(currWorkout);
         }
 
-        return res.status(200).json(workoutsData);
+        return res.status(200).json(respObj);
     }   
     catch (error) {
         console.log(`Error while trying to load user workouts: ${error}`);
@@ -118,8 +174,11 @@ export const addWorkout = async (req, res, next) => {
             await workout.addExercise(exercises[i].id, i, exercises[i].sets);
         }
 
+        user.last_sync = workout.last_sync;
+        await user.save();
+
         console.log('Successfully added workout');
-        return res.status(201).json({ id: workout.id, message: 'Successfully added workout' });
+        return res.status(201).json({ id: workout.id, message: 'Successfully added workout', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to add new workout: ${error}`);
@@ -135,7 +194,7 @@ export const editWorkout = async (req, res, next) => {
         const workoutId = req.params.id;
         const user = req.user;
 
-        const workout = (await user.getWorkouts({ where: { id: workoutId } }))[0];
+        const workout = (await user.getWorkouts({ where: { id: workoutId, deleted_at: null } }))[0];
 
         if (!workout) {
             console.log('Workout not found');
@@ -194,8 +253,11 @@ export const editWorkout = async (req, res, next) => {
             await workout.addExercise(exercises[i].id, i, exercises[i].sets);
         }
 
+        user.last_sync = workout.updated_at;
+        await user.save();
+
         console.log('Successfully changed workout');
-        return res.status(200).json({ message: 'Successfully changed workout' });
+        return res.status(200).json({ message: 'Successfully changed workout', last_sync: user.last_sync });
     }
     catch (error) {
         console.log(`Error while trying to edit workout: ${error}`);
@@ -211,7 +273,7 @@ export const removeWorkout = async (req, res, next) => {
         const workoutId = req.params.id;
         const user = req.user;
 
-        const workout = (await user.getWorkouts({ where: {id: workoutId } }))[0];
+        const workout = (await user.getWorkouts({ where: {id: workoutId, deleted_at: null } }))[0];
 
         if (!workout) {
             console.log('Workout does not exist');
@@ -220,10 +282,13 @@ export const removeWorkout = async (req, res, next) => {
             return next(err);
         }
 
-        await workout.destroy();
+        await workout.update({ deleted_at: new Date() });
+
+        user.last_sync = workout.deleted_at;
+        await user.save();
+
         console.log('Successfully removed workout');
-        
-        return res.status(200).json({ message: 'Successfully removed workout' });
+        return res.status(200).json({ message: 'Successfully removed workout', last_sync: user.last_sync });
     }   
     catch (error) {
         console.log(`Error while trying to remove workout`);
