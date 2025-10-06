@@ -81,18 +81,6 @@ export const register = async (req, res, next) => {
     try {
         const { username, password } = req.body;
 
-        // check if user already exists
-        const user = await User.findOne({ where: sequelize.where(
-            sequelize.fn('LOWER', sequelize.col('username')),
-            username.toLowerCase()
-        )});
-
-        if (user) {
-            const err = new Error('User already exists');
-            err.status = 400;
-            return next(err);
-        }
-
         const errors = [];
 
         validateUsername(username, errors);
@@ -103,6 +91,18 @@ export const register = async (req, res, next) => {
             const err = new Error('Failed to register');
             err.status = 422;
             err.details = errors;
+            return next(err);
+        }
+
+        // check if user already exists
+        const user = await User.findOne({ where: sequelize.where(
+            sequelize.fn('LOWER', sequelize.col('username')),
+            username.toLowerCase()
+        )});
+
+        if (user) {
+            const err = new Error('User already exists');
+            err.status = 400;
             return next(err);
         }
         
