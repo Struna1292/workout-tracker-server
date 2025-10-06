@@ -341,13 +341,6 @@ export const getEmailVerificationCode = async (req, res, next) => {
 
         const user = req.user;
 
-        if (!user) {
-            console.log('User does not exist');
-            const err = new Error('User does not exist');
-            err.status = 404;
-            return next(err);
-        }
-
         if (!user.email) {
             console.log('User has no e-mail');
             const err = new Error('User did not provide e-mail');
