@@ -113,7 +113,8 @@ export const register = async (req, res, next) => {
 
         await User.create({ 
             username: username,
-            password: hash, 
+            password: hash,
+            last_sync: new Date() 
         });
 
         return res.status(201).json({ message: 'Successfully registered' });
