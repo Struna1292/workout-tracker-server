@@ -111,13 +111,13 @@ export const register = async (req, res, next) => {
         const salt = await bcrypt.genSalt(saltRounds);
         const hash = await bcrypt.hash(password, salt);
 
-        await User.create({ 
+        const newUser = await User.create({ 
             username: username,
             password: hash,
             last_sync: new Date() 
         });
 
-        return res.status(201).json({ message: 'Successfully registered' });
+        return res.status(201).json({ message: 'Successfully registered', last_sync: newUser.last_sync });
     }
     catch (error) {
         console.log(`Error while creating user account: ${error}`);
@@ -125,7 +125,7 @@ export const register = async (req, res, next) => {
         err.status = 500;
         return next(err);
     }
-}
+};
 
 export const refreshToken = async (req, res, next) => {
     if (req.cookies.refreshToken) {
