@@ -1,3 +1,5 @@
+const EXERCISES_IN_TEMPLATE_LIMIT = process.env.EXERCISES_IN_TEMPLATE_LIMIT || 50;
+
 export const validateName = (newTemplate, templateData, errors, templatesNamesSet) => {
     const name = templateData.name;
     // check if there is name
@@ -40,6 +42,11 @@ export const validateExercises = (newTemplate, templateData, errors, exercisesId
         errors.push('exercises needs to be positive integer array');
         return;
     }
+
+    if (exercises.length > EXERCISES_IN_TEMPLATE_LIMIT) {
+        errors.push(`too much exercises, limit is: ${EXERCISES_IN_TEMPLATE_LIMIT}`);
+        return;
+    }    
 
     for (const exercise of exercises) {
         if (isNaN(exercise) || !Number.isInteger(exercise) || exercise < 0) {

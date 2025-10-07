@@ -1,3 +1,6 @@
+const EXERCISES_IN_WORKOUT_LIMIT = process.env.EXERCISES_IN_WORKOUT_LIMIT || 50;
+const SETS_IN_EXERCISE_LIMIT = process.env.SETS_IN_EXERCISE_LIMIT || 30;
+
 export const validateTemplate = (newWorkout, workoutData, errors, templatesIdsSet) => {
     const templateId = workoutData.template;
 
@@ -67,6 +70,11 @@ export const validateExercises = (newWorkout, workoutData, errors, exercisesIdsS
         return; 
     }
 
+    if (exercises.length > EXERCISES_IN_WORKOUT_LIMIT) {
+        errors.push(`too much exercises, limit is: ${EXERCISES_IN_WORKOUT_LIMIT}`);
+        return;
+    }
+
     for (const exercise of exercises) {
         const id = exercise.id;
 
@@ -87,6 +95,11 @@ export const validateExercises = (newWorkout, workoutData, errors, exercisesIdsS
 
         if (!Array.isArray(sets)) {
             errors.push('sets must be an array');
+            return;
+        }
+
+        if (sets.length > SETS_IN_EXERCISE_LIMIT) {
+            errors.push(`too much sets in exercise, limit is: ${SETS_IN_EXERCISE_LIMIT}`);
             return;
         }
 
