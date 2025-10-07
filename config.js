@@ -33,3 +33,7 @@ if (missing.length > 0) {
 
     process.exit(1);
 }
+
+console.log(`Exercises in workout limit: ${process.env.EXERCISES_IN_WORKOUT_LIMIT || 50}`);
+console.log(`Sets in exercise limit: ${process.env.SETS_IN_EXERCISE_LIMIT || 30}`);
+console.log(`Exercises in template limit: ${process.env.EXERCISES_IN_TEMPLATE_LIMIT || 50}`);
