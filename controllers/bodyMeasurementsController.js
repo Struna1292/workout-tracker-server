@@ -7,14 +7,14 @@ export const userMeasurements = async (req, res, next) => {
         const user = req.user;
 
         let offset = parseInt(req.query.offset) || 0;
-        let limit = parseInt(req.query.limit) || 20;
+        let limit = parseInt(req.query.limit) || 100;
 
         if (offset < 0) {
             offset = 0;
         }
 
-        if (limit < 0 || limit > 20) {
-            limit = 20;
+        if (limit < 0 || limit > 100) {
+            limit = 100;
         }
 
         let startDate = req.startDate;
