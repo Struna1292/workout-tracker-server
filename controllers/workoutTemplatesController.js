@@ -172,7 +172,7 @@ export const addWorkoutTemplate = async (req, res, next) => {
             await template.addExercise(exercises[i], i);
         }
 
-        user.last_sync = template.last_sync;
+        user.last_sync = template.updated_at;
         await user.save();
 
         console.log('Successfully added workout template');

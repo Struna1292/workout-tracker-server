@@ -174,7 +174,7 @@ export const addWorkout = async (req, res, next) => {
             await workout.addExercise(exercises[i].id, i, exercises[i].sets);
         }
 
-        user.last_sync = workout.last_sync;
+        user.last_sync = workout.updated_at;
         await user.save();
 
         console.log('Successfully added workout');

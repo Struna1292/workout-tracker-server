@@ -200,7 +200,7 @@ export const addUserExercise = async (req, res, next) => {
         const exercise = await user.createExercise(newExercise);
         await exercise.setMuscleGroups(newExercise.muscleGroups);
 
-        user.last_sync = exercise.last_sync;
+        user.last_sync = exercise.updated_at;
         await user.save();        
         
         return res.status(201).json({ id: exercise.id, message: 'Successfully added exercise', last_sync: user.last_sync });

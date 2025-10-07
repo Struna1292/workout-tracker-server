@@ -133,7 +133,7 @@ export const addMeasurement = async (req, res, next) => {
 
         const measurement = await user.createBodyMeasurement(newMeasurement);
 
-        user.last_sync = measurement.last_sync;
+        user.last_sync = measurement.updated_at;
         await user.save();
 
         console.log('Successfully added measurement');
