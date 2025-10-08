@@ -13,6 +13,11 @@ export const validateUsername = (username, errors) => {
         errors.push('Username needs to be atleast 3 characters long');
         return;
     }
+
+    if (username.length > 255) {
+        errors.push('Username too long, max length 255');
+        return;
+    }    
 };
 
 export const validatePassword = (password, errors) => {
@@ -28,6 +33,11 @@ export const validatePassword = (password, errors) => {
 
     if (password.length < 8) {
         errors.push('Password needs to be atleast 8 characters long');
+        return;        
+    }
+
+    if (password.length > 255) {
+        errors.push('Password too long, max length 255');
         return;        
     }
 
@@ -63,7 +73,7 @@ export const validatePassword = (password, errors) => {
         errors.push('Password must contain upper case english letter');
     }
 
-    if (!digit) {
+    if (!specialCharacter) {
         errors.push('Password must contain special character');
     }
 
