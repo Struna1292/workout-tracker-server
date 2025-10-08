@@ -4,6 +4,7 @@ import {
     validateName, 
     validateExercises,
 } from '../validations/templateValidations.js';
+import db from '../db.js';
 
 export const userWorkoutTemplates = async (req, res, next) => {
     try {
@@ -26,7 +27,7 @@ export const userWorkoutTemplates = async (req, res, next) => {
         let templates;
         // startDate provided
         if (startDate) {
-            measurements = await user.getWorkoutTemplates({
+            templates = await user.getWorkoutTemplates({
                 offset: offset, 
                 limit: limit + 1,
                 where: {
@@ -40,7 +41,7 @@ export const userWorkoutTemplates = async (req, res, next) => {
             });
         }
         else {
-            measurements = await user.getWorkoutTemplates({
+            templates = await user.getWorkoutTemplates({
                 offset: offset, 
                 limit: limit + 1,
                 where: {
@@ -131,6 +132,7 @@ export const userWorkoutTemplateDetails = async (req, res, next) => {
 };
 
 export const addWorkoutTemplate = async (req, res, next) => {
+    const t = await db.transaction();
     try {
 
         const templateData = req.body;
@@ -165,20 +167,23 @@ export const addWorkoutTemplate = async (req, res, next) => {
             return next(err);
         }
 
-        const template = await user.createWorkoutTemplate(newTemplate);
+        const template = await user.createWorkoutTemplate(newTemplate, { transaction: t });
 
         const exercises = newTemplate.exercises;
         for (let i = 0; i < exercises.length; i++) {
-            await template.addExercise(exercises[i], i);
+            await template.addExercise(exercises[i], i, { transaction: t });
         }
 
         user.last_sync = template.updated_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
         console.log('Successfully added workout template');
         return res.status(201).json({ id: template.id, message: 'Successfully added workout template', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while adding new workout template: ${error}`);
         const err = new Error('Internal server error while adding new workout template');
         err.status = 500;
@@ -187,6 +192,7 @@ export const addWorkoutTemplate = async (req, res, next) => {
 };
 
 export const updateWorkoutTemplate = async (req, res, next) => {
+    const t = await db.transaction();
     try {
 
         const user = req.user;
@@ -236,23 +242,26 @@ export const updateWorkoutTemplate = async (req, res, next) => {
             return next(err);
         }
 
-        await template.update(newTemplate);
+        await template.update(newTemplate, { transaction: t });
 
         // clear previous exercises
-        await template.setExercises([]);
+        await template.setExercises([], { transaction: t });
 
         const exercises = newTemplate.exercises;
         for (let i = 0; i < exercises.length; i++) {
-            await template.addExercise(exercises[i], i);
+            await template.addExercise(exercises[i], i, { transaction: t });
         }
 
         user.last_sync = template.updated_at;
-        await user.save();           
+        await user.save({ transaction: t });           
 
+        await t.commit();
         console.log('Successfully edited workout template');
         return res.status(200).json({ message: 'Successfully edited workout template', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to udpate template: ${error}`);
         const err = new Error('Internal server error while trying to update template');
         err.status = 500;
@@ -261,6 +270,7 @@ export const updateWorkoutTemplate = async (req, res, next) => {
 };
 
 export const removeWorkoutTemplate = async (req, res, next) => {
+    const t = await db.transaction();
     try {
         const templateId = req.params.id;
 
@@ -276,14 +286,18 @@ export const removeWorkoutTemplate = async (req, res, next) => {
             return next(err);
         }
 
-        await template.update({ deleted_at: new Date() });
+        await template.update({ deleted_at: new Date() }, { transaction: t });
 
         user.last_sync = template.deleted_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
+        console.log('Successfully removed user template');
         return res.status(200).json({ message: 'Successfully removed user workout template', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to remove workout template: ${error}`);
         const err = new Error('Internal server error while removing workout template');
         err.status = 500;

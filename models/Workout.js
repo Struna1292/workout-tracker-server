@@ -45,13 +45,14 @@ const Workout = db.define(
 // default addExercise functions works on findOrCreate
 // instead of adding same exercise with different position 
 // it will override position
-Workout.prototype.addExercise = async function (exerciseId, position, sets) {
+Workout.prototype.addExercise = async function (exerciseId, position, sets, options = {}) {
+    const { transaction } = options;
 
     const workoutExercise = await WorkoutExercise.create({
         workout_id: this.id,
         exercise_id: exerciseId,
         position: position,
-    });
+    }, { transaction });
 
     if (sets) {
         for (let i = 0; i < sets.length; i++) {
@@ -59,7 +60,7 @@ Workout.prototype.addExercise = async function (exerciseId, position, sets) {
                 reps: sets[i].reps,
                 weight: sets[i].weight,
                 position: i,
-            });
+            }, { transaction });
         }
     }
 

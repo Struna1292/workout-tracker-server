@@ -37,12 +37,13 @@ const WorkoutTemplate = db.define(
 // default addExercise functions works on findOrCreate
 // instead of adding same exercise with different position 
 // it will override position
-WorkoutTemplate.prototype.addExercise = async function (exerciseId, position) {
+WorkoutTemplate.prototype.addExercise = async function (exerciseId, position, options = {}) {
+    const { transaction } = options;
     return await WorkoutTemplateExercise.create({
         workout_template_id: this.id,
         exercise_id: exerciseId,
         position: position
-    });
+    }, { transaction });
 }
 
 export default WorkoutTemplate;

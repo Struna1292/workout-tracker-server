@@ -1,5 +1,6 @@
 import { validateMeasurement } from '../validations/bodyMeasurementValidations.js';
 import { Op } from 'sequelize';
+import db from '../db.js';
 
 export const userMeasurements = async (req, res, next) => {
     try {
@@ -102,6 +103,7 @@ export const userMeasurements = async (req, res, next) => {
 };
 
 export const addMeasurement = async (req, res, next) => {
+    const t = await db.transaction();
     try {
         const newMeasurement = {
             weight: null,
@@ -131,15 +133,18 @@ export const addMeasurement = async (req, res, next) => {
 
         const user = req.user;
 
-        const measurement = await user.createBodyMeasurement(newMeasurement);
+        const measurement = await user.createBodyMeasurement(newMeasurement, { transaction: t });
 
         user.last_sync = measurement.updated_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
         console.log('Successfully added measurement');
         return res.status(201).json({ id: measurement.id, message: 'Successfully added measurement', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to add new measurement: ${error}`);
         const err = new Error('Internal server error while trying to add new measurement');
         err.status = 500;
@@ -148,6 +153,7 @@ export const addMeasurement = async (req, res, next) => {
 };
 
 export const updateMeasurement = async (req, res, next) => {
+    const t = await db.transaction();
     try {
         const measurementId = req.params.id;
         const measurementData = req.body;
@@ -189,15 +195,18 @@ export const updateMeasurement = async (req, res, next) => {
             return next(err);
         }
 
-        await measurement.update(newMeasurement);
+        await measurement.update(newMeasurement, { transaction: t });
 
         user.last_sync = measurement.updated_at;
-        await user.save();        
+        await user.save({ transaction: t });
 
+        await t.commit();
         console.log('Successfully updated measurement');
         return res.status(200).json({ message: 'Successfully updated measurement', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to update measurement: ${error}`);
         const err = new Error('Internal server error while updating measurement');
         err.status = 500;
@@ -206,6 +215,7 @@ export const updateMeasurement = async (req, res, next) => {
 };
 
 export const removeMeasurement = async (req, res, next) => {
+    const t = await db.transaction();
     try {
         const measurementId = req.params.id;
 
@@ -223,15 +233,18 @@ export const removeMeasurement = async (req, res, next) => {
             return next(err);            
         }
 
-        await measurement.update({ deleted_at: new Date() });
+        await measurement.update({ deleted_at: new Date() }, { transaction: t });
 
         user.last_sync = measurement.deleted_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
         console.log('Successfully removed measurement');
         return res.status(200).json({ message: 'Successfully removed measurement', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to remove measurement by id: ${error}`);
         const err = new Error('Internal server error while trying to remove measurement');
         err.status = 500;

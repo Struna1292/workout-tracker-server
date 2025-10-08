@@ -71,7 +71,7 @@ export const login = async (req, res, next) => {
                 maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days in miliseconds
             });
 
-            return res.status(200).json({ message: 'logged in', token: accessToken });
+            return res.status(200).json({ message: 'logged in', token: accessToken, last_sync: user.last_sync });
         }
         else {
             console.log(`Invalid password`);
@@ -89,6 +89,7 @@ export const login = async (req, res, next) => {
 };
 
 export const register = async (req, res, next) => {
+    const t = await sequelize.transaction();
     try {
         const { username, password } = req.body;
 
@@ -126,7 +127,7 @@ export const register = async (req, res, next) => {
             username: username,
             password: hash,
             last_sync: new Date() 
-        });
+        }, { transaction: t });
 
         const accessToken = jwt.sign({
             id: user.id,
@@ -144,7 +145,7 @@ export const register = async (req, res, next) => {
         hash = await bcrypt.hash(refreshToken, salt);
         
         user.refresh_token = hash;
-        await user.save();
+        await user.save({ transaction: t });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
@@ -153,9 +154,13 @@ export const register = async (req, res, next) => {
             maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days in miliseconds
         });        
 
+        await t.commit();
+        console.log('Successfully created user account');
         return res.status(201).json({ message: 'Successfully registered', last_sync: user.last_sync, token: accessToken });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while creating user account: ${error}`);
         const err = new Error('Internal server error while creating user account');
         err.status = 500;

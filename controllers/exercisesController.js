@@ -6,6 +6,7 @@ import {
     validateDescription, 
     validateMuscleGroups 
 } from '../validations/exerciseValidations.js';
+import db from '../db.js';
 
 export const getUserExercises = async (req, res, next) => {
     try {
@@ -164,6 +165,7 @@ const getExercisesNamesSet = (userExercises, globalExercises) => {
 };
 
 export const addUserExercise = async (req, res, next) => {
+    const t = await db.transaction();
     try {
 
         const exerciseData = req.body;
@@ -197,15 +199,19 @@ export const addUserExercise = async (req, res, next) => {
             return next(err);
         }
 
-        const exercise = await user.createExercise(newExercise);
-        await exercise.setMuscleGroups(newExercise.muscleGroups);
+        const exercise = await user.createExercise(newExercise, { transaction: t });
+        await exercise.setMuscleGroups(newExercise.muscleGroups, { transaction: t });
 
         user.last_sync = exercise.updated_at;
-        await user.save();        
+        await user.save({ transaction: t });        
         
+        await t.commit();
+        console.log('Successfully added user defined exercise');
         return res.status(201).json({ id: exercise.id, message: 'Successfully added exercise', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to add new exercise: ${error}`);
         const err = new Error('Internal server error while trying to add new exercise');
         err.status = 500;
@@ -214,6 +220,7 @@ export const addUserExercise = async (req, res, next) => {
 };
 
 export const editUserExercise = async (req, res, next) => {
+    const t = await db.transaction();
     try {
         const exerciseId = req.params.id;
         const user = req.user;
@@ -260,15 +267,19 @@ export const editUserExercise = async (req, res, next) => {
             return next(err);
         }
 
-        await exercise.update(newExercise);
-        await exercise.setMuscleGroups(newExercise.muscleGroups);
+        await exercise.update(newExercise, { transaction: t });
+        await exercise.setMuscleGroups(newExercise.muscleGroups, { transaction: t });
 
         user.last_sync = measurement.updated_at;
-        await user.save();
-
+        await user.save({ transaction: t });
+        
+        await t.commit();
+        console.log('Successfully changed user exercise');
         return res.status(200).json({ message: 'Successfully edited exercise', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to edit user exercise: ${error}`);
         const err = new Error('Internal server error while trying to edit exercise');
         err.status = 500;
@@ -277,6 +288,7 @@ export const editUserExercise = async (req, res, next) => {
 };
 
 export const removeUserExercise = async (req, res, next) => {
+    const t = await db.transaction();
     try {
         
         const user = req.user;
@@ -291,14 +303,18 @@ export const removeUserExercise = async (req, res, next) => {
             return next(err);
         }
 
-        await exercise.update({ deleted_at: new Date() });
+        await exercise.update({ deleted_at: new Date() }, { transaction: t });
 
         user.last_sync = exercise.deleted_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
+        console.log('Successfully removed user exercise');
         return res.status(200).json({ message: 'Successfully removed user exercise', last_sync: user.last_sync});
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to remove user exercise: ${error}`);
         const err = new Error('Internal server error while trying to remove exercise');
         err.status = 500;

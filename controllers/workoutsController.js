@@ -5,6 +5,8 @@ import {
     validateDate, 
     validateExercises 
 } from '../validations/workoutValidations.js';
+import { Op } from 'sequelize';
+import db from '../db.js';
 
 export const getUserWorkouts = async (req, res, next) => {
     try {
@@ -110,7 +112,7 @@ export const getUserWorkouts = async (req, res, next) => {
                 currWorkout.exercises.push(currExercise);
             }
 
-            respObj.push(currWorkout);
+            respObj.data.push(currWorkout);
         }
 
         return res.status(200).json(respObj);
@@ -124,6 +126,7 @@ export const getUserWorkouts = async (req, res, next) => {
 };
 
 export const addWorkout = async (req, res, next) => {
+    const t = await db.transaction();
     try {
 
         const user = req.user;
@@ -166,21 +169,24 @@ export const addWorkout = async (req, res, next) => {
             return next(err);
         }     
 
-        const workout = await user.createWorkout(newWorkout);
+        const workout = await user.createWorkout(newWorkout, { transaction: t });
 
         const exercises = newWorkout.exercises;
 
         for (let i = 0; i < exercises.length; i++) {
-            await workout.addExercise(exercises[i].id, i, exercises[i].sets);
+            await workout.addExercise(exercises[i].id, i, exercises[i].sets, { transaction: t });
         }
 
         user.last_sync = workout.updated_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
         console.log('Successfully added workout');
         return res.status(201).json({ id: workout.id, message: 'Successfully added workout', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to add new workout: ${error}`);
         const err = new Error('Internal server error while adding workout');
         err.status = 500;
@@ -189,6 +195,7 @@ export const addWorkout = async (req, res, next) => {
 };
 
 export const editWorkout = async (req, res, next) => {
+    const t = await db.transaction();
     try {
 
         const workoutId = req.params.id;
@@ -242,24 +249,27 @@ export const editWorkout = async (req, res, next) => {
             return next(err);
         }     
 
-        await workout.update(newWorkout);
+        await workout.update(newWorkout, { transaction: t });
 
         // clear previous exercises
-        await workout.setExercises([]);
+        await workout.setExercises([], { transaction: t });
 
         const exercises = newWorkout.exercises;
 
         for (let i = 0; i < exercises.length; i++) {
-            await workout.addExercise(exercises[i].id, i, exercises[i].sets);
+            await workout.addExercise(exercises[i].id, i, exercises[i].sets, { transaction: t });
         }
 
         user.last_sync = workout.updated_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
         console.log('Successfully changed workout');
         return res.status(200).json({ message: 'Successfully changed workout', last_sync: user.last_sync });
     }
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to edit workout: ${error}`);
         const err = new Error('Internal server error while editing workout');
         err.status = 500;
@@ -268,6 +278,7 @@ export const editWorkout = async (req, res, next) => {
 };
 
 export const removeWorkout = async (req, res, next) => {
+    const t = await db.transaction();
     try {
 
         const workoutId = req.params.id;
@@ -282,15 +293,18 @@ export const removeWorkout = async (req, res, next) => {
             return next(err);
         }
 
-        await workout.update({ deleted_at: new Date() });
+        await workout.update({ deleted_at: new Date() }, { transaction: t });
 
         user.last_sync = workout.deleted_at;
-        await user.save();
+        await user.save({ transaction: t });
 
+        await t.commit();
         console.log('Successfully removed workout');
         return res.status(200).json({ message: 'Successfully removed workout', last_sync: user.last_sync });
     }   
     catch (error) {
+        await t.rollback();
+
         console.log(`Error while trying to remove workout`);
         const err = new Error('Internal serve error while trying to remove workout');
         err.status = 500;
