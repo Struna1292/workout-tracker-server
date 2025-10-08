@@ -80,7 +80,7 @@ export const userWorkoutTemplates = async (req, res, next) => {
                 exercisesData[exercise.WorkoutTemplateExercise.position] = exercise.id;
             }
 
-            respObj.push({
+            respObj.data.push({
                 id: template.id,
                 deleted: false,
                 name: template.name,
