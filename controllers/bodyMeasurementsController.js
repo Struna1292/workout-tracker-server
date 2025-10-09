@@ -1,6 +1,16 @@
-import { validateMeasurement } from '../validations/bodyMeasurementValidations.js';
 import { Op } from 'sequelize';
 import db from '../db.js';
+import { 
+    validateWeight,
+    validateArm,
+    validateForearm,
+    validateChest,
+    validateWaist,
+    validateHips,
+    validateThigh,
+    validateCalf,
+    validateDate,
+} from '../validations/bodyMeasurementValidations.js';
 
 export const userMeasurements = async (req, res, next) => {
     try {
@@ -105,23 +115,19 @@ export const userMeasurements = async (req, res, next) => {
 export const addMeasurement = async (req, res, next) => {
     const t = await db.transaction();
     try {
-        const newMeasurement = {
-            weight: null,
-            arm: null, 
-            forearm: null, 
-            chest: null,
-            waist: null, 
-            hips: null,
-            thigh: null,
-            calf: null,
-            date: null
-        };
-
         const measurementData = req.body;
 
         const errors = [];
 
-        validateMeasurement(newMeasurement, measurementData, errors);
+        validateWeight(measurementData.weight, errors);
+        validateArm(measurementData.arm, errors);
+        validateForearm(measurementData.forearm, errors);
+        validateChest(measurementData.chest, errors);
+        validateWaist(measurementData.waist, errors);
+        validateHips(measurementData.hips, errors);
+        validateThigh(measurementData.thigh, errors);
+        validateCalf(measurementData.calf, errors);
+        validateDate(measurementData.date, errors);
 
         if (errors.length > 0) {
             console.log('Failed to add measurement');
@@ -133,7 +139,17 @@ export const addMeasurement = async (req, res, next) => {
 
         const user = req.user;
 
-        const measurement = await user.createBodyMeasurement(newMeasurement, { transaction: t });
+        const measurement = await user.createBodyMeasurement({
+            weight: measurementData.weight,
+            arm: measurementData.arm,
+            forearm: measurementData.forearm,
+            chest: measurementData.chest,
+            waist: measurementData.waist,
+            hips: measurementData.hips,
+            thigh: measurementData.thigh,
+            calf: measurementData.calf,
+            date: measurementData.date,
+        }, { transaction: t });
 
         user.last_sync = measurement.updated_at;
         await user.save({ transaction: t });
@@ -171,21 +187,17 @@ export const updateMeasurement = async (req, res, next) => {
             return next(err);
         }
 
-        const newMeasurement = {
-            weight: null,
-            arm: null, 
-            forearm: null, 
-            chest: null,
-            waist: null, 
-            hips: null,
-            thigh: null,
-            calf: null,
-            date: null
-        };
-
         const errors = [];
 
-        validateMeasurement(newMeasurement, measurementData, errors);
+        validateWeight(measurementData.weight, errors);
+        validateArm(measurementData.arm, errors);
+        validateForearm(measurementData.forearm, errors);
+        validateChest(measurementData.chest, errors);
+        validateWaist(measurementData.waist, errors);
+        validateHips(measurementData.hips, errors);
+        validateThigh(measurementData.thigh, errors);
+        validateCalf(measurementData.calf, errors);
+        validateDate(measurementData.date, errors);        
 
         if (errors.length > 0) {
             console.log('Failed to update measurement');
@@ -195,7 +207,17 @@ export const updateMeasurement = async (req, res, next) => {
             return next(err);
         }
 
-        await measurement.update(newMeasurement, { transaction: t });
+        await measurement.update({
+            weight: measurementData.weight,
+            arm: measurementData.arm,
+            forearm: measurementData.forearm,
+            chest: measurementData.chest,
+            waist: measurementData.waist,
+            hips: measurementData.hips,
+            thigh: measurementData.thigh,
+            calf: measurementData.calf,
+            date: measurementData.date,
+        }, { transaction: t });
 
         user.last_sync = measurement.updated_at;
         await user.save({ transaction: t });
