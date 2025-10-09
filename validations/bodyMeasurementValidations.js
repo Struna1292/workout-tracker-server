@@ -1,9 +1,9 @@
 export const validateWeight = (weight, errors) => {
-    if (!weight) {
+    if (weight == null) {
         return;
     }
 
-    if (isNaN(weight) || weight < 0 || weight > 10000) {
+    if (typeof weight != 'number' || Number.isNaN(weight) || weight < 0 || weight > 10000) {
         errors.push('Weight needs to be a number between 0 and 10000');
         return;
     }
@@ -16,11 +16,11 @@ export const validateWeight = (weight, errors) => {
 }
 
 export const validateArm = (arm, errors) => {
-    if (!arm) {
+    if (arm == null) {
         return;
     }
 
-    if (isNaN(arm) || arm < 0 || arm > 10000) {
+    if (typeof arm != 'number' || Number.isNaN(arm) || arm < 0 || arm > 10000) {
         errors.push('Arm needs to be a number between 0 and 10000');
         return;
     }
@@ -33,11 +33,11 @@ export const validateArm = (arm, errors) => {
 }
 
 export const validateForearm = (forearm, errors) => {
-    if (!forearm) {
+    if (forearm == null) {
         return;
     }
 
-    if (isNaN(forearm) || forearm < 0 || forearm > 10000) {
+    if (typeof forearm != 'number' || Number.isNaN(forearm) || forearm < 0 || forearm > 10000) {
         errors.push('Forearm needs to be a number between 0 and 10000');
         return;
     }
@@ -50,11 +50,11 @@ export const validateForearm = (forearm, errors) => {
 }
 
 export const validateChest = (chest, errors) => {
-    if (!chest) {
+    if (chest == null) {
         return;
     }
 
-    if (isNaN(chest) || chest < 0 || chest > 10000) {
+    if (typeof chest != 'number' || Number.isNaN(chest) || chest < 0 || chest > 10000) {
         errors.push('Chest needs to be a number between 0 and 10000');
         return;
     }
@@ -67,11 +67,11 @@ export const validateChest = (chest, errors) => {
 }
 
 export const validateWaist = (waist, errors) => {
-    if (!waist) {
+    if (waist == null) {
         return;
     }
 
-    if (isNaN(waist) || waist < 0 || waist > 10000) {
+    if (typeof waist != 'number' || Number.isNaN(waist) || waist < 0 || waist > 10000) {
         errors.push('Waist needs to be a number between 0 and 10000');
         return;
     }
@@ -84,11 +84,11 @@ export const validateWaist = (waist, errors) => {
 }
 
 export const validateHips = (hips, errors) => {
-    if (!hips) {
+    if (hips == null) {
         return;
     }
 
-    if (isNaN(hips) || hips < 0 || hips > 10000) {
+    if (typeof hips != 'number' || Number.isNaN(hips) || hips < 0 || hips > 10000) {
         errors.push('Hips needs to be a number between 0 and 10000');
         return;
     }
@@ -101,11 +101,11 @@ export const validateHips = (hips, errors) => {
 }
 
 export const validateThigh = (thigh, errors) => {
-    if (!thigh) {
+    if (thigh == null) {
         return;
     }
 
-    if (isNaN(thigh) || thigh < 0 || thigh > 10000) {
+    if (typeof thigh != 'number' || Number.isNaN(thigh) || thigh < 0 || thigh > 10000) {
         errors.push('Thigh needs to be a number between 0 and 10000');
         return;
     }
@@ -118,11 +118,11 @@ export const validateThigh = (thigh, errors) => {
 }
 
 export const validateCalf = (calf, errors) => {
-    if (!calf) {
+    if (calf == null) {
         return;
     }
 
-    if (isNaN(calf) || calf < 0 || calf > 10000) {
+    if (typeof calf != 'number' || Number.isNaN(calf) || calf < 0 || calf > 10000) {
         errors.push('Calf needs to be a number between 0 and 10000');
         return;
     }
@@ -135,13 +135,18 @@ export const validateCalf = (calf, errors) => {
 }
 
 export const validateDate = (date, errors) => {
-    if (!date) {
+    if (date == null) {
         errors.push('Missing date');
         return;
     }
 
+    if (typeof date == 'number') {
+        errors.push('Date must be a string or Date object');
+        return;
+    }
+
     const checkDate = new Date(date);
-    if (checkDate == 'Invalid Date') {
+    if (Number.isNaN(checkDate.getTime())) {
         errors.push('Invalid date');
     }
 }
