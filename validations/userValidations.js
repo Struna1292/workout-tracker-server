@@ -90,16 +90,56 @@ export const validateEmail = (email, errors) => {
         return;
     }
 
+    if (email.length > 255) {
+        errors.push('Email too long, max length 255');
+        return;
+    }
+
     let atSign = false;
+    let beforeAtSign = false;
+    let afterAtSign = false;
+    let dot = false;
+    let afterDot = false;
 
     for (const char of email) { 
-        if (char == '@') {
+        if (char == '@' && atSign) {
+            errors.push('Email cant contain more than one @ sign');
+            return;
+        }
+        else if (char == '@') {
             atSign = true;
-            break;
+        }
+        else if (!atSign) {
+            beforeAtSign = true;
+        }
+        else if (atSign && char == '.') {
+            dot = true;
+        }
+        else if (atSign && !dot) {
+            afterAtSign = true;
+        }
+        else if (dot) {
+            afterDot = true;
         }
     }
 
     if (!atSign) {
         errors.push('Email must contain @ sign');
+    }
+
+    if (!beforeAtSign) {
+        errors.push('Email missing part before @ sign');
+    }
+
+    if (!afterAtSign) {
+        errors.push('Email missing part after @ sign');
+    }
+
+    if (!dot) {
+        errors.push('Email missing . after @ sign');
+    }
+
+    if (!afterDot) {
+        errors.push('Email missing domain after .');
     }
 };
