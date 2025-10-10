@@ -176,20 +176,14 @@ export const addUserExercise = async (req, res, next) => {
  
         const exercisesNamesSet = getExercisesNamesSet(userExercises, globalExercises);
         const muscleGroupsIdsSet = new Set(muscleGroups.map((mG) => mG.id));
-        
-        const newExercise = {
-            name: null,
-            description: null,
-            muscleGroups: null
-        };
 
         const errors = [];
 
-        validateName(newExercise, exerciseData, errors, exercisesNamesSet);
+        validateName(exerciseData.name, errors, exercisesNamesSet);
 
-        validateDescription(newExercise, exerciseData, errors);
+        validateDescription(exerciseData.description, errors);
 
-        validateMuscleGroups(newExercise, exerciseData, errors, muscleGroupsIdsSet);
+        validateMuscleGroups(exerciseData.muscleGroups, errors, muscleGroupsIdsSet);
 
         if (errors.length > 0) {
             console.log('Failed to add new exercise');
@@ -199,8 +193,12 @@ export const addUserExercise = async (req, res, next) => {
             return next(err);
         }
 
-        const exercise = await user.createExercise(newExercise, { transaction: t });
-        await exercise.setMuscleGroups(newExercise.muscleGroups, { transaction: t });
+        const exercise = await user.createExercise({
+            name: exerciseData.name,
+            description: exercise.description,
+        }, { transaction: t });
+
+        await exercise.setMuscleGroups(exerciseData.muscleGroups, { transaction: t });
 
         user.last_sync = exercise.updated_at;
         await user.save({ transaction: t });        
@@ -245,19 +243,13 @@ export const editUserExercise = async (req, res, next) => {
         const exercisesNamesSet = getExercisesNamesSet(userExercises, globalExercises);
         const muscleGroupsIdsSet = new Set(muscleGroups.map((mG) => mG.id));
 
-        const newExercise = {
-            name: null,
-            description: null,
-            muscleGroups: null
-        };        
-
         const errors = [];
 
-        validateName(newExercise, exerciseData, errors, exercisesNamesSet);
+        validateName(exerciseData.name, errors, exercisesNamesSet);
 
-        validateDescription(newExercise, exerciseData, errors);
+        validateDescription(exerciseData.description, errors);
 
-        validateMuscleGroups(newExercise, exerciseData, errors, muscleGroupsIdsSet);
+        validateMuscleGroups(exerciseData.muscleGroups, errors, muscleGroupsIdsSet);
 
         if (errors.length > 0) {
             console.log('Failed to edit exercise');
@@ -267,8 +259,12 @@ export const editUserExercise = async (req, res, next) => {
             return next(err);
         }
 
-        await exercise.update(newExercise, { transaction: t });
-        await exercise.setMuscleGroups(newExercise.muscleGroups, { transaction: t });
+        await exercise.update({
+            name: exerciseData.name,
+            description: exercise.description,
+        }, { transaction: t });
+
+        await exercise.setMuscleGroups(exerciseData.muscleGroups, { transaction: t });
 
         user.last_sync = measurement.updated_at;
         await user.save({ transaction: t });

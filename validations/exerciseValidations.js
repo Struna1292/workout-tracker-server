@@ -1,8 +1,12 @@
-export const validateName = (newExercise, exerciseData, errors, exercisesNamesSet) => {
-    const name = exerciseData.name;
+export const validateName = (name, errors, exercisesNamesSet) => {
     // check if there is name
-    if (!name) {
+    if (name == null) {
         errors.push('Missing exercise name');
+        return;
+    }
+
+    if (typeof name != 'string') {
+        errors.push('Exercise name must be type string');
         return;
     }
 
@@ -13,40 +17,47 @@ export const validateName = (newExercise, exerciseData, errors, exercisesNamesSe
 
     const lowerCaseName = name.toLowerCase();
 
+    let spaces = true;
     // check characters
     for (const char of lowerCaseName) {
         if (!((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == ' ')) {
             errors.push('Exercise name can contain only english letters, digits, and spaces');
-            break;
+            return;
         }
+
+        if (char != ' ') {
+            spaces = false;
+        }
+    }
+
+    if (spaces) {
+        errors.push('Exercise name cannot consist only of spaces');
+        return;
     }
 
     // check if exercise with this name already exists
     if (exercisesNamesSet.has(lowerCaseName)) {
         errors.push('Exercise with this name already exists');
-    }
-
-    newExercise.name = name;
+    }    
 };
 
-export const validateDescription = (newExercise, exerciseData, errors) => {
-    const description = exerciseData.description;
+export const validateDescription = (description, errors) => {
+    if (description == null) {
+        return;
+    }
 
-    if (!description) {
+    if (typeof description != 'string') {
+        errors.push('Description must be type string');
         return;
     }
 
     if (description.length > 1000) {
         errors.push('Description cant be longer than 1000 characters');
     }
-
-    newExercise.description = description;
 };
 
-export const validateMuscleGroups = (newExercise, exerciseData, errors, muscleGroupsIdsSet) => {
-    const muscleGroups = exerciseData.muscleGroups;
-
-    if (!muscleGroups) {
+export const validateMuscleGroups = (muscleGroups, errors, muscleGroupsIdsSet) => {
+    if (muscleGroups == null) {
         return;
     }
     
@@ -54,6 +65,9 @@ export const validateMuscleGroups = (newExercise, exerciseData, errors, muscleGr
         errors.push('muscleGroups needs to be positive integer array');
         return;
     }
+
+    // store given ids in set to check if they reoccur
+    const set = new Set();
 
     for (const muscleGroup of muscleGroups) {
         if (isNaN(muscleGroup) || !Number.isInteger(muscleGroup) || muscleGroup < 0) {
@@ -66,7 +80,12 @@ export const validateMuscleGroups = (newExercise, exerciseData, errors, muscleGr
         if (!muscleGroupsIdsSet.has(currId)) {
             errors.push(`Muscle group with id ${currId} does not exist`);
         }
-    }
 
-    newExercise.muscleGroups = muscleGroups;
+        if (set.has(currId)) {
+            errors.push('Muscle group id cant reoccur in same exercise');
+            return;
+        }
+
+        set.add(currId);
+    }
 };
