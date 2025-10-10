@@ -86,6 +86,7 @@ export const getUserExercises = async (req, res, next) => {
             else {
                 respObj.data.push({
                     id: exercise.id,
+                    deleted: false,
                     name: exercise.name,
                     description: exercise.description,
                     muscleGroups: muscleGroups.map((mG) => (mG.id))
