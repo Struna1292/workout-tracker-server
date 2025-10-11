@@ -99,7 +99,6 @@ export const getUserWorkouts = async (req, res, next) => {
 
                 const currExercise = {
                     id: exercise.id,
-                    name: exercise.name,
                     position: exercise.WorkoutExercise.position,
                     sets: [],
                 };
