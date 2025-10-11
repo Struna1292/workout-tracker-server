@@ -195,7 +195,7 @@ describe('Validate exercise muscle groups', () => {
         expect(errors).toContain('2.5 is invalid. Muscle group id needs to be positive integer.');
     });
     
-    test('Id is float', () => {
+    test('Ids are string', () => {
         const muscleGroups = ['12', '23'];
         const muscleGroupsIdsSet = new Set([12, 23]);
         const errors = [];
