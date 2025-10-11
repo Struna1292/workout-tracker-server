@@ -1,12 +1,14 @@
-const EXERCISES_IN_TEMPLATE_LIMIT = process.env.EXERCISES_IN_TEMPLATE_LIMIT || 50;
-
-export const validateName = (newTemplate, templateData, errors, templatesNamesSet) => {
-    const name = templateData.name;
+export const validateName = (name, errors, templatesNamesSet) => {
     // check if there is name
-    if (!name) {
+    if (name == null) {
         errors.push('Missing template name');
         return;
     }
+
+    if (typeof name != 'string') {
+        errors.push('Template name must be type string');
+        return;
+    }    
 
     // check name length
     if (name.length == 0 || name.length >= 256) {
@@ -15,26 +17,32 @@ export const validateName = (newTemplate, templateData, errors, templatesNamesSe
 
     const lowerCaseName = name.toLowerCase();
 
+    let spaces = true;
     // check characters
     for (const char of lowerCaseName) {
         if (!((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == ' ')) {
             errors.push('Template name can contain only english letters, digits, and spaces');
-            break;
+            return;
         }
+
+        if (char != ' ') {
+            spaces = false;
+        }        
     }
+
+    if (spaces) {
+        errors.push('Template name cannot consist only of spaces');
+        return;
+    }    
 
     // check if template with this name already exists
     if (templatesNamesSet.has(lowerCaseName)) {
         errors.push('Template with this name already exists');
     }
-
-    newTemplate.name = name;
 };
 
-export const validateExercises = (newTemplate, templateData, errors, exercisesIdsSet) => {
-    const exercises = templateData.exercises;
-
-    if (!exercises) {
+export const validateExercises = (exercises, errors, exercisesIdsSet, limit) => {
+    if (exercises == null) {
         return;
     }
     
@@ -43,8 +51,8 @@ export const validateExercises = (newTemplate, templateData, errors, exercisesId
         return;
     }
 
-    if (exercises.length > EXERCISES_IN_TEMPLATE_LIMIT) {
-        errors.push(`too much exercises, limit is: ${EXERCISES_IN_TEMPLATE_LIMIT}`);
+    if (exercises.length > limit) {
+        errors.push(`too much exercises, limit is: ${limit}`);
         return;
     }    
 
@@ -60,6 +68,4 @@ export const validateExercises = (newTemplate, templateData, errors, exercisesId
             errors.push(`Exercise with id ${currId} does not exist`);
         }
     }
-
-    newTemplate.exercises = exercises;
 };

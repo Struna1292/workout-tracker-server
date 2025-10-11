@@ -6,6 +6,8 @@ import {
 } from '../validations/templateValidations.js';
 import db from '../db.js';
 
+const EXERCISES_IN_TEMPLATE_LIMIT = process.env.EXERCISES_IN_TEMPLATE_LIMIT;
+
 export const userWorkoutTemplates = async (req, res, next) => {
     try {
         const user = req.user;
@@ -148,16 +150,11 @@ export const addWorkoutTemplate = async (req, res, next) => {
             exercisesIdsSet.add(exercise.id);
         }
 
-        const newTemplate = {
-            name: null,
-            exercises: null,
-        };
-
         const errors = [];
 
-        validateName(newTemplate, templateData, errors, templatesNamesSet);
+        validateName(templateData.name, errors, templatesNamesSet);
 
-        validateExercises(newTemplate, templateData, errors, exercisesIdsSet);        
+        validateExercises(templateData.exercises, errors, exercisesIdsSet, EXERCISES_IN_TEMPLATE_LIMIT);
 
         if (errors.length > 0) {
             console.log('Failed to add new template');
@@ -167,9 +164,9 @@ export const addWorkoutTemplate = async (req, res, next) => {
             return next(err);
         }
 
-        const template = await user.createWorkoutTemplate(newTemplate, { transaction: t });
+        const template = await user.createWorkoutTemplate({ name: templateData.name }, { transaction: t });
 
-        const exercises = newTemplate.exercises;
+        const exercises = templateData.exercises;
         for (let i = 0; i < exercises.length; i++) {
             await template.addExercise(exercises[i], i, { transaction: t });
         }
@@ -223,16 +220,11 @@ export const updateWorkoutTemplate = async (req, res, next) => {
 
         const templatesNamesSet = new Set(templates.map((t) => t.name.toLowerCase()));
 
-        const newTemplate = {
-            name: null,
-            exercises: null,
-        };
-
         const errors = [];
 
-        validateName(newTemplate, templateData, errors, templatesNamesSet);
+        validateName(templateData.name, errors, templatesNamesSet);
 
-        validateExercises(newTemplate, templateData, errors, exercisesIdsSet);             
+        validateExercises(templateData.exercises, errors, exercisesIdsSet, EXERCISES_IN_TEMPLATE_LIMIT);
 
         if (errors.length > 0) {
             console.log('Failed to edit template');
@@ -242,12 +234,12 @@ export const updateWorkoutTemplate = async (req, res, next) => {
             return next(err);
         }
 
-        await template.update(newTemplate, { transaction: t });
+        await template.update({ name: templateData.name }, { transaction: t });
 
         // clear previous exercises
         await template.setExercises([], { transaction: t });
 
-        const exercises = newTemplate.exercises;
+        const exercises = templateData.exercises;
         for (let i = 0; i < exercises.length; i++) {
             await template.addExercise(exercises[i], i, { transaction: t });
         }
