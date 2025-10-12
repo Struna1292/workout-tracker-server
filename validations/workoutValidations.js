@@ -1,10 +1,6 @@
-const EXERCISES_IN_WORKOUT_LIMIT = process.env.EXERCISES_IN_WORKOUT_LIMIT || 50;
-const SETS_IN_EXERCISE_LIMIT = process.env.SETS_IN_EXERCISE_LIMIT || 30;
+export const validateTemplate = (templateId, errors, templatesIdsSet) => {
 
-export const validateTemplate = (newWorkout, workoutData, errors, templatesIdsSet) => {
-    const templateId = workoutData.template;
-
-    if (!templateId) {
+    if (templateId == null) {
         return;
     }
 
@@ -19,14 +15,11 @@ export const validateTemplate = (newWorkout, workoutData, errors, templatesIdsSe
         errors.push(`Template with id ${id} does not exist`);
         return;
     }
-
-    newWorkout.workout_template_id = id;
 };
 
-export const validateDuration = (newWorkout, workoutData, errors) => {
-    const duration = workoutData.duration;
+export const validateDuration = (duration, errors) => {
 
-    if (!duration) {
+    if (duration == null) {
         return;
     }
 
@@ -39,29 +32,86 @@ export const validateDuration = (newWorkout, workoutData, errors) => {
         errors.push('Duration needs to be integer between 0 and 100000');
         return;
     }
-
-    newWorkout.duration = duration;
 };
 
-export const validateDate = (newWorkout, workoutData, errors) => {
-    if (!workoutData.date) {
-        errors.push('Missing date');
+export const validateDate = (date, errors) => {
+    if (date == null) {
+        errors.push('Missing workout date');
         return;
     }
 
-    const date = new Date(workoutData.date);
-    if (date == 'Invalid Date') {
-        errors.push('Invalid date');
+    if (typeof date == 'number') {
+        errors.push('Date must be a string or Date object');
         return;
     }
 
-    newWorkout.date = date;
+    const checkDate = new Date(date);
+    if (Number.isNaN(checkDate.getTime())) {
+        errors.push('Invalid workout date');
+    }
 };
 
-export const validateExercises = (newWorkout, workoutData, errors, exercisesIdsSet) => {
-    const exercises = workoutData.exercises;
+export const validateWeight = (weight, errors) => {
+    if (weight == null) {
+        errors.push('Missing weight in set');
+        return;
+    }
 
-    if (!exercises) {
+    if (typeof weight != 'number' || isNaN(weight) || weight < 0 || weight > 100000) {
+        errors.push('Weight needs to be number between 0 and 100000');
+        return;
+    }
+
+    const decimalPart = (weight.toString().split('.'))[1];
+
+    if (decimalPart && decimalPart.length > 2) {
+        errors.push('Weight needs to be a number with maximum 2 digits in decimal part');
+    }    
+};
+
+export const validateReps = (reps, errors) => {
+    if (reps == null) {
+        errors.push('Missing reps in set');
+        return;
+    }
+
+    if (typeof reps != 'number' || !Number.isInteger(reps) || reps < 1 || reps > 100000) {
+        errors.push('Reps needs to be integer between 1 and 100000');
+        return;
+    }
+};
+
+export const validateSets = (sets, errors, limit) => {
+    if (sets == null) {
+        return;
+    }
+
+    if (!Array.isArray(sets)) {
+        errors.push('sets must be an array');
+        return;
+    }
+
+    if (sets.length > limit) {
+        errors.push(`too much sets in exercise, limit is: ${limit}`);
+        return;
+    }
+
+    for (const set of sets) {
+        const reps = set.reps;
+        const weight = set.weight;
+
+        validateReps(reps, errors);
+        validateWeight(weight, errors);
+
+        if (errors.length > 0) {
+            return;
+        }
+    }
+};
+
+export const validateExercises = (exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit) => {
+
+    if (exercises == null) {
         return;
     }
 
@@ -70,8 +120,8 @@ export const validateExercises = (newWorkout, workoutData, errors, exercisesIdsS
         return; 
     }
 
-    if (exercises.length > EXERCISES_IN_WORKOUT_LIMIT) {
-        errors.push(`too much exercises, limit is: ${EXERCISES_IN_WORKOUT_LIMIT}`);
+    if (exercises.length > exercisesLimit) {
+        errors.push(`too much exercises, limit is: ${exercisesLimit}`);
         return;
     }
 
@@ -88,46 +138,10 @@ export const validateExercises = (newWorkout, workoutData, errors, exercisesIdsS
             return;
         }
 
-        const sets = exercise.sets;
-        if (!sets) {
-            continue;
-        }
+        validateSets(exercise.sets, errors, setsLimit);
 
-        if (!Array.isArray(sets)) {
-            errors.push('sets must be an array');
+        if (errors.length > 0) {
             return;
-        }
-
-        if (sets.length > SETS_IN_EXERCISE_LIMIT) {
-            errors.push(`too much sets in exercise, limit is: ${SETS_IN_EXERCISE_LIMIT}`);
-            return;
-        }
-
-        for (const set of sets) {
-            const reps = set.reps;
-            const weight = set.weight;
-
-            if (!reps) {
-                errors.push('Missing reps in set');
-                return;
-            }
-
-            if (!Number.isInteger(reps) || reps < 1 || reps > 100000) {
-                errors.push('Reps needs to be integer between 1 and 100000');
-                return;
-            }
-
-            if (!weight) {
-                errors.push('Missing weight in set');
-                return;
-            }
-
-            if (isNaN(weight) || weight < 0 || weight > 100000) {
-                errors.push('Weight needs to be number between 0 and 100000');
-                return;
-            }
         }
     }
-
-    newWorkout.exercises = exercises;
 };

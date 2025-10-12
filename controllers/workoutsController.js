@@ -8,6 +8,9 @@ import {
 import { Op } from 'sequelize';
 import db from '../db.js';
 
+const EXERCISES_IN_WORKOUT_LIMIT = process.env.EXERCISES_IN_WORKOUT_LIMIT;
+const SETS_IN_EXERCISE_LIMIT = process.env.SETS_IN_EXERCISE_LIMIT;
+
 export const getUserWorkouts = async (req, res, next) => {
     try {
         const user = req.user; 
@@ -142,23 +145,16 @@ export const addWorkout = async (req, res, next) => {
         for (const exercise of globalExercises) {
             exercisesIdsSet.add(exercise.id);
         }
-        
-        const newWorkout = {
-            workout_template_id: null,
-            duration: null,
-            date: null,
-            exercises: null,
-        };
 
         const errors = [];
 
-        validateTemplate(newWorkout, workoutData, errors, templatesIdsSet);
+        validateTemplate(workoutData.templateId, errors, templatesIdsSet);
 
-        validateDuration(newWorkout, workoutData, errors);
+        validateDuration(workoutData.duration, errors);
 
-        validateDate(newWorkout, workoutData, errors);
+        validateDate(workoutData.date, errors);
 
-        validateExercises(newWorkout, workoutData, errors, exercisesIdsSet);
+        validateExercises(workoutData.exercises, errors, exercisesIdsSet, EXERCISES_IN_WORKOUT_LIMIT, SETS_IN_EXERCISE_LIMIT);
 
         if (errors.length > 0) {
             console.log('Failed to add workout');
@@ -168,9 +164,13 @@ export const addWorkout = async (req, res, next) => {
             return next(err);
         }     
 
-        const workout = await user.createWorkout(newWorkout, { transaction: t });
+        const workout = await user.createWorkout({
+            workout_template_id: workoutData.templateId,
+            duration: workoutData.duration,
+            date: workoutData.date,
+        }, { transaction: t });
 
-        const exercises = newWorkout.exercises;
+        const exercises = workoutData.exercises;
 
         for (let i = 0; i < exercises.length; i++) {
             await workout.addExercise(exercises[i].id, i, exercises[i].sets, { transaction: t });
@@ -222,23 +222,16 @@ export const editWorkout = async (req, res, next) => {
         for (const exercise of globalExercises) {
             exercisesIdsSet.add(exercise.id);
         }
-        
-        const newWorkout = {
-            workout_template_id: null,
-            duration: null,
-            date: null,
-            exercises: null,
-        };
 
         const errors = [];
 
-        validateTemplate(newWorkout, workoutData, errors, templatesIdsSet);
+        validateTemplate(workoutData.templateId, errors, templatesIdsSet);
 
-        validateDuration(newWorkout, workoutData, errors);
+        validateDuration(workoutData.duration, errors);
 
-        validateDate(newWorkout, workoutData, errors);
+        validateDate(workoutData.date, errors);
 
-        validateExercises(newWorkout, workoutData, errors, exercisesIdsSet);
+        validateExercises(workoutData.exercises, errors, exercisesIdsSet, EXERCISES_IN_WORKOUT_LIMIT, SETS_IN_EXERCISE_LIMIT);
 
         if (errors.length > 0) {
             console.log('Failed to edit workout');
@@ -248,12 +241,16 @@ export const editWorkout = async (req, res, next) => {
             return next(err);
         }     
 
-        await workout.update(newWorkout, { transaction: t });
+        await workout.update({
+            workout_template_id: workoutData.templateId,
+            duration: workoutData.duration,
+            date: workoutData.date,
+        }, { transaction: t });
 
         // clear previous exercises
         await workout.setExercises([], { transaction: t });
 
-        const exercises = newWorkout.exercises;
+        const exercises = workoutData.exercises;
 
         for (let i = 0; i < exercises.length; i++) {
             await workout.addExercise(exercises[i].id, i, exercises[i].sets, { transaction: t });
