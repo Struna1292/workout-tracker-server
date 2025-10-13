@@ -1,7 +1,7 @@
 import { 
     validateName,
     validateExercises,
-} from '../../validations/templateValidations.js';
+} from '../../../validations/templateValidations.js';
 
 describe('Validate template name', () => {
     test('Is null', () => {

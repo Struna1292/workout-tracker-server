@@ -8,7 +8,7 @@ import {
     validateThigh,
     validateCalf,
     validateDate,    
-} from '../../validations/bodyMeasurementValidations.js';
+} from '../../../validations/bodyMeasurementValidations.js';
 
 describe('Validate weight', () => {
     test('Weight is NaN', () => {

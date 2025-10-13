@@ -6,7 +6,7 @@ import {
     validateReps,
     validateSets,
     validateExercises,
-} from '../../validations/workoutValidations.js';
+} from '../../../validations/workoutValidations.js';
 
 describe('Validate workout template', () => {
     test('invalid type', () => {

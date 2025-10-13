@@ -2,7 +2,7 @@ import {
     validateUsername,
     validatePassword,
     validateEmail,
-} from '../../validations/userValidations.js';
+} from '../../../validations/userValidations.js';
 
 
 describe('Username validation', () => {

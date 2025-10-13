@@ -2,7 +2,7 @@ import {
     validateName,
     validateDescription,
     validateMuscleGroups,
-} from '../../validations/exerciseValidations.js';
+} from '../../../validations/exerciseValidations.js';
 
 describe('Validate exercise name', () => {
     test('Is null', () => {
