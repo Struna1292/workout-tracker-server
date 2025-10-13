@@ -97,6 +97,11 @@ export const validateSets = (sets, errors, limit) => {
     }
 
     for (const set of sets) {
+        if (typeof set != 'object') {
+            errors.push('sets must be an object array');
+            return;
+        }
+
         const reps = set.reps;
         const weight = set.weight;
 
@@ -128,8 +133,13 @@ export const validateExercises = (exercises, errors, exercisesIdsSet, exercisesL
     for (const exercise of exercises) {
         const id = exercise.id;
 
+        if (id == null) {
+            errors.push('Missing id in exercise object');
+            return;
+        }
+
         if (!Number.isInteger(id) || id < 0) {
-            errors.push(`${id} is not positive integer exercise index`);
+            errors.push(`${id} is not integer greater than 0`);
             return;
         }
 
