@@ -86,7 +86,16 @@ describe('Validate workout duration', () => {
         validateDuration(duration, errors);
 
         expect(errors).toContain('Duration needs to be integer between 0 and 100000');
-    });   
+    });
+    
+    test('too big', () => {
+        const duration = 100001;
+        const errors = [];
+
+        validateDuration(duration, errors);
+
+        expect(errors).toContain('Duration needs to be integer between 0 and 100000');
+    });
 
     test('Valid null duration', () => {
         const duration = null;
@@ -146,6 +155,15 @@ describe('Validate workout date', () => {
 
     test('Invalid date string', () => {
         const date = 'asdhgds';
+        const errors = [];
+
+        validateDate(date, errors);
+
+        expect(errors).toContain('Invalid workout date');
+    });
+
+    test('Invalid date object', () => {
+        const date = new Date('invalid date');
         const errors = [];
 
         validateDate(date, errors);
@@ -339,7 +357,41 @@ describe('Validate set reps', () => {
 });
 
 describe('Validate sets', () => {
-    test('Valid no sets', () => {
+    test('Not an array', () => {
+        const sets = 15;
+        const limit = 2;
+        const errors = [];
+
+        validateSets(sets, errors, limit);
+
+        expect(errors).toContain('sets must be an array');
+    });
+
+    test('Invalid type', () => {
+        const sets = [1, 2, 3];
+        const limit = 10;
+        const errors = [];
+
+        validateSets(sets, errors, limit);
+
+        expect(errors).toContain('sets must be an object array');
+    });
+
+    test('too much sets', () => {
+        const sets = [
+            { weight: 10, reps: 10 },
+            { weight: 20, reps: 20 },
+            { weight: 20, reps: 20 },
+        ];
+        const limit = 2;
+        const errors = [];
+
+        validateSets(sets, errors, limit);
+
+        expect(errors).toContain(`too much sets in exercise, limit is: ${limit}`);
+    });
+
+    test('Valid null sets', () => {
         const sets = null;
         const limit = 10;
         const errors = [];
@@ -348,6 +400,16 @@ describe('Validate sets', () => {
 
         expect(errors).toEqual([]);
     });
+
+    test('Valid empty array', () => {
+        const sets = [];
+        const limit = 10;
+        const errors = [];
+
+        validateSets(sets, errors, limit);
+
+        expect(errors).toEqual([]);
+    });    
 
     test('Valid sets', () => {
         const sets = [
@@ -361,8 +423,151 @@ describe('Validate sets', () => {
 
         expect(errors).toEqual([]);
     });
+
+    test('Valid max sets', () => {
+        const sets = [
+            { weight: 10, reps: 10 },
+            { weight: 20, reps: 20 },
+        ];
+        const limit = 2;
+        const errors = [];
+
+        validateSets(sets, errors, limit);
+
+        expect(errors).toEqual([]);
+    });    
 });
 
 describe('Validate workout exercises', () => {
+    test('exercises not an array', () => {
+        const exercises = 'abcd';
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 10;
+        const setsLimit = 10;
+        const errors = [];
 
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toContain('exercises must be an array');
+    });
+
+    test('exercise id is not integer', () => {
+        const exercises = [
+            { id: '1' },
+            { id: 1 },
+            { id: 2 },
+        ];
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 10;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toContain('1 is not integer greater than 0');
+    });
+    
+    test('too much exercises', () => {
+        const exercises = [
+            { id: 1 },
+            { id: 1 },
+            { id: 2 },
+        ];
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 2;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toContain(`too much exercises, limit is: ${exercisesLimit}`);
+    });    
+
+    test('exercise does not exist', () => {
+        const exercises = [
+            { id: 1 },
+            { id: 1 },
+            { id: 5 },
+        ];
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 10;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toContain('exercise with id 5 not found');
+    });
+
+    test('exercise object without id', () => {
+        const exercises = [
+            { notId: 1 },
+            { id: 1 },
+            { id: 5 },
+        ];
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 10;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toContain('Missing id in exercise object');
+    });    
+
+    test('Valid empty array', () => {
+        const exercises = [];
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 10;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toEqual([]);
+    });
+
+    test('Valid null exercises', () => {
+        const exercises = null;
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 10;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toEqual([]);
+    });
+
+    test('Valid exercises', () => {
+        const exercises = [
+            { id: 1 },
+            { id: 1 },
+            { id: 2 },
+        ];
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 10;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toEqual([]);
+    });
+
+    test('Valid max exercises', () => {
+        const exercises = [
+            { id: 1 },
+            { id: 1 },
+            { id: 2 },
+        ];
+        const exercisesIdsSet = new Set([1, 2, 3]);
+        const exercisesLimit = 3;
+        const setsLimit = 10;
+        const errors = [];
+
+        validateExercises(exercises, errors, exercisesIdsSet, exercisesLimit, setsLimit);
+
+        expect(errors).toEqual([]);
+    });    
 });
