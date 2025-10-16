@@ -1,5 +1,5 @@
 // checks if there is data sent
-const checkBody = async (req, res, next) => {
+const checkBody = (req, res, next) => {
     if (!req.body) {
         console.log('There is no data sent');
         const err = new Error('There is no data sent');
