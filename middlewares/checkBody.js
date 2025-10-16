@@ -1,6 +1,6 @@
 // checks if there is data sent
 const checkBody = (req, res, next) => {
-    if (!req.body) {
+    if (req.body == null) {
         console.log('There is no data sent');
         const err = new Error('There is no data sent');
         err.status = 400;
