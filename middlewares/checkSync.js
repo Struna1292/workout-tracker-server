@@ -12,7 +12,7 @@ const checkSync = async (req, res, next) => {
 
     const lastSync = new Date(header);
 
-    if (lastSync == 'Invalid Date') {
+    if (Number.isNaN(lastSync.getTime())) {
         console.log('Invalid date format in X-Last-Sync header');
         const err = new Error('Invalid date format in X-Last-Sync header');
         err.status = 400;
