@@ -3,7 +3,7 @@ const checkDateQueryParams = (req, res, next) => {
     let startDate = req.query.startDate;
     let endDate = req.query.endDate;
 
-    if (!endDate) {
+    if (endDate == null) {
         console.log('No endDate query param provided');
         const err = new Error('No endDate query param provided');
         err.status = 400;
@@ -11,16 +11,16 @@ const checkDateQueryParams = (req, res, next) => {
     }
 
     endDate = new Date(endDate);
-    if (endDate == 'Invalid Date') {
+    if (Number.isNaN(endDate.getTime())) {
         console.log('endDate query param invalid date');
         const err = new Error('endDate query param invalid date');
         err.status = 400;
         return next(err);
     }
 
-    if (startDate) {
+    if (startDate != null) {
         startDate = new Date(startDate);
-        if (startDate == 'Invalid Date') {
+        if (Number.isNaN(startDate.getTime())) {
             console.log('startDate query param invalid date');
             const err = new Error('startDate query param invalid date');
             err.status = 400;
@@ -35,7 +35,7 @@ const checkDateQueryParams = (req, res, next) => {
         }
     }
 
-    req.startDate = startDate;
+    req.startDate = startDate || null;
     req.endDate = endDate;
 
     return next();
