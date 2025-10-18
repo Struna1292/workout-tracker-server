@@ -5,6 +5,7 @@ import './config.js';
 import errorHandler from './middlewares/errorHandler.js';
 import logger from './middlewares/logger.js';
 import notFound from './middlewares/notFound.js';
+import { globalLimiter } from './middlewares/rateLimiter.js';
 import authRouter from './routes/authRoutes.js';
 import usersRouter from './routes/usersRoutes.js';
 import bodyMeasurementsRouter from './routes/bodyMeasurementsRoutes.js';
@@ -24,6 +25,9 @@ app.use(cors());
 
 // json middleware
 app.use(express.json());
+
+// rate limiting global
+app.use(globalLimiter);
 
 // cookies middleware
 app.use(cookieParser());

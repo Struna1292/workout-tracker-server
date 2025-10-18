@@ -2,6 +2,7 @@ import express from 'express';
 import checkBody from '../middlewares/checkBody.js';
 import authToken from '../middlewares/authToken.js';
 import loadUser from '../middlewares/loadUser.js';
+import { loginLimiter } from '../middlewares/rateLimiter.js';
 import { 
     login, 
     register, 
@@ -17,7 +18,7 @@ import {
 
 const router = express.Router();
 
-router.post('/login', login);
+router.post('/login', loginLimiter, login);
 router.post('/register', register);
 router.post('/refresh', refreshToken);
 router.post('/logout', logoutToken);
