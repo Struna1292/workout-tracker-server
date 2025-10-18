@@ -7,6 +7,7 @@ import {
 } from '../validations/workoutValidations.js';
 import { Op } from 'sequelize';
 import db from '../db.js';
+import WorkoutTemplate from '../models/WorkoutTemplate.js';
 
 const EXERCISES_IN_WORKOUT_LIMIT = process.env.EXERCISES_IN_WORKOUT_LIMIT;
 const SETS_IN_EXERCISE_LIMIT = process.env.SETS_IN_EXERCISE_LIMIT;
@@ -135,7 +136,12 @@ export const addWorkout = async (req, res, next) => {
         const workoutData = req.body;
 
         const templates = await user.getWorkoutTemplates();
+        const globalTemplates = await WorkoutTemplate.findAll({ where: { user_id: null } });
         const templatesIdsSet = new Set(templates.map((t) => t.id));
+
+        for (const gT of globalTemplates) {
+            templatesIdsSet.add(gT.id);
+        }
 
         const userExercises = await user.getExercises();
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
@@ -212,7 +218,12 @@ export const editWorkout = async (req, res, next) => {
         const workoutData = req.body;
 
         const templates = await user.getWorkoutTemplates();
+        const globalTemplates = await WorkoutTemplate.findAll({ where: { user_id: null } });
         const templatesIdsSet = new Set(templates.map((t) => t.id));
+
+        for (const gT of globalTemplates) {
+            templatesIdsSet.add(gT.id);
+        }        
 
         const userExercises = await user.getExercises();
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
