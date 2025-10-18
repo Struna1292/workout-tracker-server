@@ -15,7 +15,7 @@ const ConfirmationCode = db.define(
         },
         type: {
             type: DataTypes.ENUM,
-            values: ['email-verification', 'email-removal', 'forgot-password', 'change-password'],
+            values: ['email-verification', 'forgot-password'],
             allowNull: false,
         },
         code: {
@@ -26,6 +26,11 @@ const ConfirmationCode = db.define(
             type: DataTypes.DATE,
             allowNull: false,
         },
+        attempts: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 10,
+        }
     }, {
         tableName: 'confirmation_codes',
         timestamps: false,

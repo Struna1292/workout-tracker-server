@@ -440,7 +440,28 @@ export const verifyEmail = async (req, res, next) => {
 
         const confirmationCode = (await user.getCodes({ where: { type: 'email-verification' } }))[0];
 
+        if (confirmationCode == null) {
+            console.log('Confirmation code does not exist, first generate code');
+            const err = new Error('Confirmation code does not exist, first generate code');
+            err.status = 404;
+            return next(err);
+        }
+
+        if (confirmationCode.attempts == 0) {
+            await confirmationCode.destroy();
+
+            console.log('Confirmation code reached attempts limit');
+            const err = new Error('Confirmation code reached attempts limit');
+            err.status = 400;
+            return next(err);
+        }        
+
         if (!(await bcrypt.compare(code, confirmationCode.code))) {
+            await ConfirmationCode.update(
+                { attempts: sequelize.literal('attempts - 1') },
+                { where: { id: confirmationCode.id } }
+            );
+
             console.log('Wrong verification code');
             const err = new Error('Wrong verification code');
             err.status = 400;
@@ -595,7 +616,28 @@ export const verifyResetCode = async (req, res, next) => {
 
         const confirmationCode = (await user.getCodes({ where: { type: 'forgot-password' } }))[0];
 
+        if (confirmationCode == null) {
+            console.log('Confirmation code does not exist, first generate code');
+            const err = new Error('Confirmation code does not exist, first generate code');
+            err.status = 404;
+            return next(err);
+        }
+
+        if (confirmationCode.attempts == 0) {
+            await confirmationCode.destroy();
+
+            console.log('Confirmation code reached attempts limit');
+            const err = new Error('Confirmation code reached attempts limit');
+            err.status = 400;
+            return next(err);
+        }
+
         if (!(await bcrypt.compare(code, confirmationCode.code))) {
+            await ConfirmationCode.update(
+                { attempts: sequelize.literal('attempts - 1') },
+                { where: { id: confirmationCode.id } }
+            );
+
             console.log('Wrong reset password code');
             const err = new Error('Wrong reset password code');
             err.status = 400;
