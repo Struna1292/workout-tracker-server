@@ -673,7 +673,7 @@ export const resetPassword = async (req, res, next) => {
     try {
         const user = await User.findByPk(req.user.id);
 
-        if (!user) {
+        if (user == null || user.username == '') {
             console.log('User does not exist');
             const err = new Error('User does not exist');
             err.status = 404;
