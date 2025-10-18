@@ -13,7 +13,7 @@ export const changePassword = async (req, res, next) => {
         const { currentPassword, newPassword } = req.body;
         const user = req.user;
 
-        if (user.username == '') {
+        if (user.google_id != null) {
             console.log('Cant change password for google account');
             const err = new Error('Cant change password for google account');
             err.status = 400;
@@ -128,7 +128,7 @@ export const addEmail = async (req, res, next) => {
         const { email } = req.body;
         const user = req.user;
 
-        if (user.username == '') {
+        if (user.google_id != null) {
             console.log('Cant add email for google account');
             const err = new Error('Cant add email for google account');
             err.status = 400;
@@ -173,7 +173,7 @@ export const changeUsername = async (req, res, next) => {
         const { username } = req.body;
         const user = req.user;
 
-        if (user.username == '') {
+        if (user.google_id != null) {
             console.log('Cant change username for google account');
             const err = new Error('Cant change username for google account');
             err.status = 400;
