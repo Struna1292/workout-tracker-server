@@ -9,6 +9,8 @@ import Workout from './Workout.js';
 import WorkoutExercise from './WorkoutExercise.js';
 import Set from './Set.js';
 import ConfirmationCode from './ConfirmationCode.js';
+import WeekSchedule from './WeekSchedule.js';
+import ScheduledWorkout from './ScheduledWorkout.js';
 
 // relations between user and his body measurements
 User.hasMany(BodyMeasurement, { foreignKey: 'user_id', as: 'BodyMeasurements', onDelete: 'CASCADE'});
@@ -49,3 +51,15 @@ Workout.belongsTo(WorkoutTemplate, { foreignKey: 'workout_template_id', as: 'Tem
 // relations between user and his confirmation codes
 User.hasMany(ConfirmationCode, { foreignKey: 'user_id', as: 'Codes', onDelete: 'CASCADE' });
 ConfirmationCode.belongsTo(User, { foreignKey: 'user_id', as: 'User', onDelete: 'NO ACTION' });
+
+// relations between user and his week schedules
+User.hasMany(WeekSchedule, { foreignKey: 'user_id', as: 'WeekSchedules', onDelete: 'CASCADE' });
+WeekSchedule.belongsTo(User, { foreignKey: 'user_id', as: 'User', onDelete: 'NO ACTION' });
+
+// relations between week schedule and scheduled workouts
+WeekSchedule.hasMany(ScheduledWorkout, { foreignKey: 'week_schedule_id', as: 'ScheduledWorkouts', onDelete: 'CASCADE' });
+ScheduledWorkout.belongsTo(WeekSchedule, { foreignKey: 'week_schedule_id', as: 'WeekSchedule', onDelete: 'NO ACTION' });
+
+// relations between scheduled workout and workout template
+WorkoutTemplate.hasMany(ScheduledWorkout, { foreignKey: 'workout_template_id', as: '', onDelete: 'NO ACTION' });
+ScheduledWorkout.belongsTo(WorkoutTemplate, { foreignKey: 'workout_template_id', as: '', onDelete: 'NO ACTION' });
