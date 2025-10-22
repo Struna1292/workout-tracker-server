@@ -139,8 +139,8 @@ export const addWorkoutTemplate = async (req, res, next) => {
 
         const templateData = req.body;
         const user = req.user;
-        const templates = await user.getWorkoutTemplates();
-        const userExercises = await user.getExercises();
+        const templates = await user.getWorkoutTemplates({ where: { deleted_at: null } });
+        const userExercises = await user.getExercises({ where: { deleted_at: null } });
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
 
         const templatesNamesSet = new Set(templates.map((t) => t.name.toLowerCase()));
@@ -206,7 +206,7 @@ export const updateWorkoutTemplate = async (req, res, next) => {
 
         const templateData = req.body;
 
-        const userExercises = await user.getExercises();
+        const userExercises = await user.getExercises({ where: { deleted_at: null } });
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
 
         const exercisesIdsSet = new Set(userExercises.map((uE) => uE.id));
@@ -216,7 +216,7 @@ export const updateWorkoutTemplate = async (req, res, next) => {
         }
         
         // all user templates without one to edit
-        const templates = await user.getWorkoutTemplates({ where: { id: { [Op.not]: templateId } }});
+        const templates = await user.getWorkoutTemplates({ where: { id: { [Op.not]: templateId }, deleted_at: null }});
 
         const templatesNamesSet = new Set(templates.map((t) => t.name.toLowerCase()));
 

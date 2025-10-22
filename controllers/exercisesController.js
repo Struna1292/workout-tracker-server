@@ -171,7 +171,7 @@ export const addUserExercise = async (req, res, next) => {
 
         const exerciseData = req.body;
         const user = req.user;
-        const userExercises = await user.getExercises();
+        const userExercises = await user.getExercises({ where: { deleted_at: null } });
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
         const muscleGroups = await MuscleGroups.findAll();
  
@@ -237,7 +237,7 @@ export const editUserExercise = async (req, res, next) => {
         const exerciseData = req.body;
 
         // all user exercises except the one to be edited
-        const userExercises = await user.getExercises({ where: { id: { [Op.not]: exerciseId } }});
+        const userExercises = await user.getExercises({ where: { deleted_at: null, id: { [Op.not]: exerciseId } }});
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
         const muscleGroups = await MuscleGroups.findAll();
 

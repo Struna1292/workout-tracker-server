@@ -135,7 +135,7 @@ export const addWorkout = async (req, res, next) => {
         const user = req.user;
         const workoutData = req.body;
 
-        const templates = await user.getWorkoutTemplates();
+        const templates = await user.getWorkoutTemplates({ where: { deleted_at: null } });
         const globalTemplates = await WorkoutTemplate.findAll({ where: { user_id: null } });
         const templatesIdsSet = new Set(templates.map((t) => t.id));
 
@@ -143,7 +143,7 @@ export const addWorkout = async (req, res, next) => {
             templatesIdsSet.add(gT.id);
         }
 
-        const userExercises = await user.getExercises();
+        const userExercises = await user.getExercises({ where: { deleted_at: null } });
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
 
         const exercisesIdsSet = new Set(userExercises.map((uE) => uE.id));
@@ -217,7 +217,7 @@ export const editWorkout = async (req, res, next) => {
 
         const workoutData = req.body;
 
-        const templates = await user.getWorkoutTemplates();
+        const templates = await user.getWorkoutTemplates({ where: { deleted_at: null } });
         const globalTemplates = await WorkoutTemplate.findAll({ where: { user_id: null } });
         const templatesIdsSet = new Set(templates.map((t) => t.id));
 
@@ -225,7 +225,7 @@ export const editWorkout = async (req, res, next) => {
             templatesIdsSet.add(gT.id);
         }        
 
-        const userExercises = await user.getExercises();
+        const userExercises = await user.getExercises({ where: { deleted_at: null } });
         const globalExercises = await Exercise.findAll({ where: { user_id: null } });
 
         const exercisesIdsSet = new Set(userExercises.map((uE) => uE.id));
