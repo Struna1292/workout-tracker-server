@@ -13,6 +13,7 @@ import workoutTemplatesRouter from './routes/workoutTemplatesRoutes.js';
 import exercisesRouter from './routes/exercisesRoutes.js';
 import muscleGroupsRouter from './routes/muscleGroupsRoutes.js';
 import workoutsRouter from './routes/workoutsRoutes.js';
+import weekSchedulesRouter from './routes/weekSchedulesRoutes.js';
 import './sync.js'; 
 import cors from 'cors';
 
@@ -43,6 +44,7 @@ app.use('/api/workoutTemplates', workoutTemplatesRouter);
 app.use('/api/exercises', exercisesRouter);
 app.use('/api/muscleGroups', muscleGroupsRouter);
 app.use('/api/workouts', workoutsRouter);
+app.use('/api/weekSchedules', weekSchedulesRouter);
 
 // not found middleware
 app.use(notFound);

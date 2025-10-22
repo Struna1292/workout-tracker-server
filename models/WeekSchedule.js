@@ -17,10 +17,6 @@ const WeekSchedule = db.define(
             type: DataTypes.STRING,
             allowNull: false,
         },
-        selected: {
-            type: DataTypes.BOOLEAN,
-            allowNull: false,
-        },
         updated_at: {
             type: DataTypes.DATE(3),
             allowNull: false,

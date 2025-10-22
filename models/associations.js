@@ -61,5 +61,8 @@ WeekSchedule.hasMany(ScheduledWorkout, { foreignKey: 'week_schedule_id', as: 'Sc
 ScheduledWorkout.belongsTo(WeekSchedule, { foreignKey: 'week_schedule_id', as: 'WeekSchedule', onDelete: 'NO ACTION' });
 
 // relations between scheduled workout and workout template
-WorkoutTemplate.hasMany(ScheduledWorkout, { foreignKey: 'workout_template_id', as: '', onDelete: 'NO ACTION' });
-ScheduledWorkout.belongsTo(WorkoutTemplate, { foreignKey: 'workout_template_id', as: '', onDelete: 'NO ACTION' });
+WorkoutTemplate.hasMany(ScheduledWorkout, { foreignKey: 'workout_template_id', as: 'ScheduledWorkouts', onDelete: 'NO ACTION' });
+ScheduledWorkout.belongsTo(WorkoutTemplate, { foreignKey: 'workout_template_id', as: 'WorkoutTemplate', onDelete: 'NO ACTION' });
+
+// relation between user and his current selected week schedule
+User.belongsTo(WeekSchedule, { foreignKey: 'current_week_schedule_id', as: 'CurrentWeekSchedule', onDelete: 'NO ACTION' });

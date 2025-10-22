@@ -19,12 +19,12 @@ const ScheduledWorkout = db.define(
         },
         day: {
             type: DataTypes.ENUM,
-            values: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            values: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
             allowNull: false,
         },
-        date: {
-            type: DataTypes.DATE,
-            allowNull: false,
+        time: {
+            type: DataTypes.TIME,
+            allowNull: true,
         },
     }, {
         tableName: 'scheduled_workouts',
