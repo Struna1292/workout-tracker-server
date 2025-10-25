@@ -4,6 +4,7 @@ import WorkoutTemplate from '../models/WorkoutTemplate.js';
 import {
     validateName,
     validateSelected,
+    validateNotificationTime,
     validateScheduledWorkouts,
 } from '../validations/weekScheduleValidations.js';
 
@@ -86,6 +87,9 @@ export const getUserWeekSchedules = async (req, res, next) => {
 
             const currWeekSchedule = {
                 id: weekSchedule.id,
+                name: weekSchedule.name,
+                selected: weekSchedule.selected,
+                notificationTime: weekSchedule.notification_time,
                 deleted: false,
                 scheduledWorkouts: []
             };
@@ -134,11 +138,15 @@ export const addWeekSchedule = async (req, res, next) => {
         const weekSchedules = await user.getWeekSchedules({ where: { deleted_at: null } });
         const weekSchedulesNamesSet = new Set(weekSchedules.map((wS) => wS.name.toLowerCase()));
 
+        const currentlySelected = (await user.getWeekSchedules({ where: { selected: true, deleted_at: null } }))[0];
+
         const errors = [];
 
         validateName(weekScheduleData.name, errors, weekSchedulesNamesSet);
 
         validateSelected(weekScheduleData.selected, errors);
+
+        validateNotificationTime(weekScheduleData.notificationTime, errors);
 
         validateScheduledWorkouts(weekScheduleData.scheduledWorkouts, errors, templatesIdsSet, SCHEDULED_WORKOUTS_IN_WEEK_SCHEDULE_LIMIT);
 
@@ -152,6 +160,8 @@ export const addWeekSchedule = async (req, res, next) => {
 
         const weekSchedule = await user.createWeekSchedule({
             name: weekScheduleData.name,
+            selected: weekScheduleData.selected,
+            notification_time: weekScheduleData.notificationTime,
         }, { transaction: t });
 
         const scheduledWorkouts = weekScheduleData.scheduledWorkouts;
@@ -164,8 +174,9 @@ export const addWeekSchedule = async (req, res, next) => {
             }, { transaction: t });
         }
 
-        if (weekScheduleData != null && weekScheduleData.selected === true) {
-            await user.setCurrentWeekSchedule(weekSchedule, { transaction: t });
+        if (weekScheduleData.selected === true && currentlySelected != null) {
+            currentlySelected.selected = false;
+            await currentlySelected.save({ transaction: t });
         }
 
         user.last_sync = weekSchedule.updated_at;
@@ -212,13 +223,17 @@ export const editWeekSchedule = async (req, res, next) => {
         }
         
         const weekSchedules = await user.getWeekSchedules({ where: { deleted_at: null, id: { [Op.not]: weekScheduleId } } });
-        const weekSchedulesNamesSet = new Set(weekSchedules.map((wS) => wS.name.toLowerCase())); 
+        const weekSchedulesNamesSet = new Set(weekSchedules.map((wS) => wS.name.toLowerCase()));
+        
+        const currentlySelected = (await user.getWeekSchedules({ where: { selected: true, deleted_at: null, id: { [Op.not]: weekScheduleId } } }))[0];
 
         const errors = [];
 
         validateName(weekScheduleData.name, errors, weekSchedulesNamesSet);
 
         validateSelected(weekScheduleData.selected, errors);
+
+        validateNotificationTime(weekScheduleData.notificationTime, errors);
 
         validateScheduledWorkouts(weekScheduleData.scheduledWorkouts, errors, templatesIdsSet, SCHEDULED_WORKOUTS_IN_WEEK_SCHEDULE_LIMIT);
 
@@ -232,6 +247,8 @@ export const editWeekSchedule = async (req, res, next) => {
         
         await weekSchedule.update({
             name: weekScheduleData.name,
+            selected: weekScheduleData.selected,
+            notification_time: weekScheduleData.notificationTime,
         }, { transaction: t });
 
         // clear previous scheduled workouts
@@ -250,8 +267,9 @@ export const editWeekSchedule = async (req, res, next) => {
             }, { transaction: t });
         }
 
-        if (weekScheduleData != null && weekScheduleData.selected === true) {
-            await user.setCurrentWeekSchedule(weekSchedule, { transaction: t });
+        if (weekScheduleData.selected === true && currentlySelected != null) {
+            currentlySelected.selected = false;
+            await currentlySelected.save({ transaction: t });
         }
 
         user.last_sync = weekSchedule.updated_at;

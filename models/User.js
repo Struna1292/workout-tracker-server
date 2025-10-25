@@ -30,10 +30,6 @@ const User = db.define(
             allowNull: false,
             defaultValue: false,
         },
-        current_week_schedule_id: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-        },
         refresh_token: {
             type: DataTypes.STRING,
             allowNull: true,            
