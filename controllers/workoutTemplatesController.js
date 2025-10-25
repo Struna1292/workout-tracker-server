@@ -100,39 +100,6 @@ export const userWorkoutTemplates = async (req, res, next) => {
     }
 };
 
-export const userWorkoutTemplateDetails = async (req, res, next) => {
-    try {
-
-        const templateId = req.params.id;
-        const user = req.user;
-
-        const template = (await user.getWorkoutTemplates({ where: { id: templateId } }))[0];
-        const exercises = await template.getExercises();
-
-        const sortedExercises = new Array(exercises.length);
-
-        for (const exercise of exercises) {
-            const position = exercise.WorkoutTemplateExercise.position;
-            sortedExercises[position] = exercise.name;
-        }
-
-        const templateData = {
-            templateId: template.id,
-            name: template.name,
-            exercises: sortedExercises
-        };
-
-        
-        return res.status(200).json(templateData);
-    }
-    catch (error) {
-        console.log(`Error while trying to load user workout template detailed informations: ${error}`);
-        const err = new Error('Internal server error while loading workout template details');
-        err.status = 500;
-        return next(err);
-    }
-};
-
 export const addWorkoutTemplate = async (req, res, next) => {
     const t = await db.transaction();
     try {

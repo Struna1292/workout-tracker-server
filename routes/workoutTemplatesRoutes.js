@@ -6,7 +6,6 @@ import checkSync from '../middlewares/checkSync.js';
 import checkDateQueryParams from '../middlewares/checkDateQueryParams.js';
 import { 
     addWorkoutTemplate, 
-    userWorkoutTemplateDetails, 
     removeWorkoutTemplate, 
     userWorkoutTemplates, 
     updateWorkoutTemplate 
@@ -16,9 +15,6 @@ const router = express.Router();
 
 // get user templates
 router.get('', [authToken, loadUser, checkDateQueryParams], userWorkoutTemplates);
-
-// get single user template by id with exercises info
-router.get('/:id', [authToken, loadUser], userWorkoutTemplateDetails);
 
 // add new user template
 router.post('', [checkBody, authToken, loadUser, checkSync], addWorkoutTemplate); 
