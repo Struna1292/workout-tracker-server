@@ -244,7 +244,33 @@ export const getLastSync = async (req, res, next) => {
     }
     catch (error) {
         console.log(`Error while trying to get user last sync: ${error}`);
-        const err = new Error('Internal server error while trying to get uset last sync');
+        const err = new Error('Internal server error while trying to get user last sync');
+        err.status = 500;
+        return next(err);
+    }
+};
+
+export const getUserInformation = async (req, res, next) => {
+    try {
+        const user = req.user;
+
+        const respObj = {};
+
+        if (user.google_id != null) {
+            respObj.googleAccount = true;
+        }
+        else {
+            respObj.googleAccount = false;
+            respObj.username = user.username;
+            respObj.email = user.email;
+            respObj.emailVerified = user.email_verified;
+        }
+
+        return res.status(200).json(respObj);
+    }
+    catch (error) {
+        console.log(`Error while trying to get user information: ${error}`);
+        const err = new Error('Internal server error while trying to get user information');
         err.status = 500;
         return next(err);
     }
