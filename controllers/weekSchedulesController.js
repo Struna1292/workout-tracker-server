@@ -132,7 +132,7 @@ export const addWeekSchedule = async (req, res, next) => {
         }
 
         const weekSchedules = await user.getWeekSchedules({ where: { deleted_at: null } });
-        const weekSchedulesNamesSet = new Set(weekSchedules.map((wS) => wS.name));
+        const weekSchedulesNamesSet = new Set(weekSchedules.map((wS) => wS.name.toLowerCase()));
 
         const errors = [];
 
@@ -212,7 +212,7 @@ export const editWeekSchedule = async (req, res, next) => {
         }
         
         const weekSchedules = await user.getWeekSchedules({ where: { deleted_at: null, id: { [Op.not]: weekScheduleId } } });
-        const weekSchedulesNamesSet = new Set(weekSchedules.map((wS) => wS.name)); 
+        const weekSchedulesNamesSet = new Set(weekSchedules.map((wS) => wS.name.toLowerCase())); 
 
         const errors = [];
 
