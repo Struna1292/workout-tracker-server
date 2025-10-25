@@ -1,6 +1,7 @@
 import {
     validateName,
     validateSelected,
+    validateNotificationTime,
     validateScheduledWorkouts,
     validateTemplate,
     validateDay,
@@ -154,6 +155,53 @@ describe('Validate week schedule selected', () => {
 
         expect(errors).toEqual([]);
     });
+});
+
+describe('Validate notification time', () => {
+    test('not a string', () => {
+        const notificationTime = 100;
+        const errors = [];
+
+        validateNotificationTime(notificationTime, errors);
+
+        expect(errors).toContain('Invalid type notification time must be a string');
+    });
+    
+    test('invalid notification time', () => {
+        const notificationTime = 'adsad';
+        const errors = [];
+
+        validateNotificationTime(notificationTime, errors);
+
+        expect(errors).toContain('Notification time must be one of the following: disabled, 1m, 5m, 15m, 30m, 45m, 1h, 2h, 3h, 4h, 5h, 6h');
+    });
+    
+    test('valid notification time', () => {
+        const notificationTime = '30m';
+        const errors = [];
+
+        validateNotificationTime(notificationTime, errors);
+
+        expect(errors).toEqual([]);
+    });
+    
+    test('valid notification time case insensitive', () => {
+        const notificationTime = 'DISableD';
+        const errors = [];
+
+        validateNotificationTime(notificationTime, errors);
+
+        expect(errors).toEqual([]);
+    });
+    
+    test('notification time is null', () => {
+        const notificationTime = null;
+        const errors = [];
+
+        validateNotificationTime(notificationTime, errors);
+
+        expect(errors).toEqual([]);
+    });    
 });
 
 describe('Validate template id', () => {

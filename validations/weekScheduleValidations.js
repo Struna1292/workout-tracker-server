@@ -49,6 +49,24 @@ export const validateSelected = (selected, errors) => {
     }
 };
 
+export const validateNotificationTime = (notificationTime, errors) => {
+    if (notificationTime == null) {
+        return;
+    }
+
+    if (typeof notificationTime !== 'string') {
+        errors.push('Invalid type notification time must be a string');
+        return;
+    }
+
+    const times = new Set(['disabled', '1m', '5m', '15m', '30m', '45m', '1h', '2h', '3h', '4h', '5h', '6h']);
+
+    if (!times.has(notificationTime.toLowerCase())) {
+        errors.push('Notification time must be one of the following: disabled, 1m, 5m, 15m, 30m, 45m, 1h, 2h, 3h, 4h, 5h, 6h');
+        return;
+    }    
+};
+
 export const validateTemplate = (templateId, errors, templatesIdsSet) => {
     if (templateId == null) {
         return;
