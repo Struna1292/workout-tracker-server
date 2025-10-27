@@ -15,6 +15,7 @@ const environmentVariables = [
     'GOOGLE_CLIENT_ID',
     'EMAIL_HOST',
     'EMAIL_PASSWORD',
+    'EMAIL_USER',
 ];
 
 const missing = [];

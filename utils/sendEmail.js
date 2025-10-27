@@ -1,15 +1,18 @@
 import nodemailer from 'nodemailer';
 
 const EMAIL_HOST = process.env.EMAIL_HOST;
+const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD;
 
 const sendEmail = async (email, subject, message) => {
     try {
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'in-v3.mailjet.com',
+            port: 587, 
+            secure: false, 
             auth: {
-                user: EMAIL_HOST,
-                pass: EMAIL_PASSWORD,
+                user: EMAIL_USER,
+                pass: EMAIL_PASSWORD
             }
         });
 
