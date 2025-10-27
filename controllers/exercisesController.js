@@ -196,7 +196,7 @@ export const addUserExercise = async (req, res, next) => {
 
         const exercise = await user.createExercise({
             name: exerciseData.name,
-            description: exercise.description,
+            description: exerciseData.description,
         }, { transaction: t });
 
         await exercise.setMuscleGroups(exerciseData.muscleGroups, { transaction: t });
