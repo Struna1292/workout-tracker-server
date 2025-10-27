@@ -76,22 +76,6 @@ export const removeEmail = async (req, res, next) => {
     try {
         const user = req.user;
 
-        // check if user has email
-        if (!user.email) {  
-            console.log('User has no e-mail');
-            const err = new Error('User has no e-mail');
-            err.status = 400;
-            return next(err);
-        }
-
-        // no password needed to remove not verified email
-        if (!user.email_verified) {
-            console.log('Successfully removed e-mail'); 
-            user.email = null;
-            await user.save();
-            return res.status(200).json({ message: 'Successfully removed e-mail' });
-        }
-
         if (!req.body || !req.body.password) {
             console.log('No password provided');
             const err = new Error('No password provided');
@@ -106,6 +90,28 @@ export const removeEmail = async (req, res, next) => {
             const err = new Error('Wrong password');
             err.status = 400;
             return next(err);
+        }
+
+        if (user.google_id != null) {
+            console.log('Cant remove email for google account');
+            const err = new Error('Cant remove email for google account');
+            err.status = 400;
+            return next(err);
+        }        
+
+        // check if user has email
+        if (!user.email) {  
+            console.log('User has no e-mail');
+            const err = new Error('User has no e-mail');
+            err.status = 400;
+            return next(err);
+        }
+
+        if (!user.email_verified) {
+            console.log('Successfully removed e-mail'); 
+            user.email = null;
+            await user.save();
+            return res.status(200).json({ message: 'Successfully removed e-mail' });
         }
 
         user.email = null;
@@ -125,8 +131,22 @@ export const removeEmail = async (req, res, next) => {
 export const addEmail = async (req, res, next) => {
     try {
 
-        const { email } = req.body;
+        const { email, password } = req.body;
         const user = req.user;
+
+        if (password == null) {
+            console.log('No password provided');
+            const err = new Error('No password provided');
+            err.status = 400;
+            return next(err);
+        }
+
+        if (!(await bcrypt.compare(password, user.password))) {
+            console.log('Wrong password');
+            const err = new Error('Wrong password');
+            err.status = 400;
+            return next(err);
+        }        
 
         if (user.google_id != null) {
             console.log('Cant add email for google account');
@@ -170,8 +190,22 @@ export const addEmail = async (req, res, next) => {
 export const changeUsername = async (req, res, next) => {
     try {
 
-        const { username } = req.body;
+        const { username, password } = req.body;
         const user = req.user;
+
+        if (password == null) {
+            console.log('No password provided');
+            const err = new Error('No password provided');
+            err.status = 400;
+            return next(err);
+        }
+
+        if (!(await bcrypt.compare(password, user.password))) {
+            console.log('Wrong password');
+            const err = new Error('Wrong password');
+            err.status = 400;
+            return next(err);
+        }        
 
         if (user.google_id != null) {
             console.log('Cant change username for google account');
