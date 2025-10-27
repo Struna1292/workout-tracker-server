@@ -407,6 +407,10 @@ export const getEmailVerificationCode = async (req, res, next) => {
         console.log(`Error while sending email with verification code: ${error}`);
         const err = new Error('Internal server error while sending email with verification code');
         err.status = 500;
+
+        if (error.message == 'Daily email limit reached. Please try again tomorrow.') {
+            err.message = error.message;
+        }
         return next(err);
     }
 };
@@ -580,6 +584,10 @@ export const getForgotPasswordCode = async (req, res, next) => {
         console.log(`Error while sending email with password recovery code: ${error}`);
         const err = new Error('Internal server error while sending email with password recovery code');
         err.status = 500;
+
+        if (error.message == 'Daily email limit reached. Please try again tomorrow.') {
+            err.message = error.message;
+        }        
         return next(err);
     }
 };

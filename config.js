@@ -16,6 +16,7 @@ const environmentVariables = [
     'EMAIL_HOST',
     'EMAIL_PASSWORD',
     'EMAIL_USER',
+    'EMAIL_LIMIT',
 ];
 
 const missing = [];
