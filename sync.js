@@ -5,7 +5,7 @@ import './models/associations.js';
 const ENVIRONEMENT = process.env.ENVIRONEMENT;
 
 try {
-    await db.sync({ alter: ENVIRONEMENT == 'production' });
+    await db.sync({ alter: ENVIRONEMENT != 'production' });
     console.log('Database tables synchronised.');
 }
 catch (error) {
