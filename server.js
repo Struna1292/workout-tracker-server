@@ -42,7 +42,6 @@ app.use('/api/users', usersRouter);
 app.use('/api/bodyMeasurements', bodyMeasurementsRouter);
 app.use('/api/workoutTemplates', workoutTemplatesRouter);
 app.use('/api/exercises', exercisesRouter);
-app.use('/api/muscleGroups', muscleGroupsRouter);
 app.use('/api/workouts', workoutsRouter);
 app.use('/api/weekSchedules', weekSchedulesRouter);
 
