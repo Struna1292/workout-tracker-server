@@ -17,7 +17,7 @@ const router = express.Router();
 router.patch('/me/password', [checkBody, authToken, loadUser], changePassword);
 
 // remove user e-mail
-router.delete('/me/email', [authToken, loadUser], removeEmail);
+router.delete('/me/email', [checkBody, authToken, loadUser], removeEmail);
 
 // adding email
 router.patch('/me/email', [checkBody, authToken, loadUser], addEmail);
