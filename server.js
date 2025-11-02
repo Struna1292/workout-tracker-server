@@ -11,7 +11,6 @@ import usersRouter from './routes/usersRoutes.js';
 import bodyMeasurementsRouter from './routes/bodyMeasurementsRoutes.js';
 import workoutTemplatesRouter from './routes/workoutTemplatesRoutes.js';
 import exercisesRouter from './routes/exercisesRoutes.js';
-import muscleGroupsRouter from './routes/muscleGroupsRoutes.js';
 import workoutsRouter from './routes/workoutsRoutes.js';
 import weekSchedulesRouter from './routes/weekSchedulesRoutes.js';
 import './sync.js'; 
