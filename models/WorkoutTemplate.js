@@ -16,7 +16,7 @@ const WorkoutTemplate = db.define(
         },
         user_id: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
         updated_at: {
             type: DataTypes.DATE(3),
