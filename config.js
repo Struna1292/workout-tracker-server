@@ -2,9 +2,9 @@
 const environmentVariables = [
     'PORT',
     'DB_HOST',
-    'DB_USER',
-    'DB_PASSWORD',
-    'DB_NAME',
+    'MYSQL_USER',
+    'MYSQL_PASSWORD',
+    'MYSQL_DATABASE',
     'DB_PORT',
     'ACCESS_TOKEN_SECRET',
     'ACCESS_TOKEN_EXPIRATION',

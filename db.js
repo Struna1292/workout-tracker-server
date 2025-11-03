@@ -1,12 +1,12 @@
 import { Sequelize } from 'sequelize';
 
 const DB_HOST = process.env.DB_HOST;
-const DB_USER = process.env.DB_USER;
-const DB_NAME = process.env.DB_NAME;
-const DB_PASSWORD = process.env.DB_PASSWORD;
+const MYSQL_USER = process.env.MYSQL_USER;
+const MYSQL_DATABASE = process.env.MYSQL_DATABASE;
+const MYSQL_PASSWORD = process.env.MYSQL_PASSWORD;
 const DB_PORT = Number(process.env.DB_PORT);
 
-const db = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
+const db = new Sequelize(MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, {
     host: DB_HOST,
     port: DB_PORT,
     dialect: 'mysql',
